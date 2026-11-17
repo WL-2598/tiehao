@@ -28,8 +28,12 @@ zip.file('使用说明.txt', `帖好 TieHao · 离线批量版 v${version}
 
 1. 把 TieHao-Offline-v${version}.html 复制到任意位置（U 盘、桌面、网盘都行）。
 2. 双击文件，用 Chrome / Edge / Firefox / Safari 打开。
-3. 拖入图片 → 设置画布 / 水印 / 压缩 → 开始处理 → 下载 ZIP。
+3. 拖入原图 → 在「目标平台 · 一图多版」里勾选要投放的平台（最多 ${config.maxTargetsOffline} 个）→
+   按需设置文案排版 / 品牌 Logo / 白边裁剪 / 目标体积 → 开始处理 → 下载 ZIP。
 4. 可以完全断网使用；图片不会离开你的电脑。
+
+ZIP 内按平台分目录，manifest.csv 记录 原文件 / 平台 / 规格 / 体积变化 / 是否达标。
+文件名模板可用 {name} {platform} {w} {h} {index} {ext}；留空则保留原文件名。
 
 每批最多 ${config.offlineMaxFiles} 张，单张 ≤ ${config.maxFileMB}MB。
 品牌预设在本机浏览器里保存，可用 JSON 导出备份。
