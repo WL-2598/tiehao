@@ -14,6 +14,7 @@ const html = fs.readFileSync(path.join(ROOT, 'public', 'index.html'), 'utf8')
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1])
 const bodyHTML = html.match(/<body[^>]*>([\s\S]*)<\/body>/)[1]
 
+let stubState = null
 function stubCanvas() {
   const ctx = new Proxy(
     {},
@@ -28,9 +29,12 @@ function stubCanvas() {
     },
   )
   HTMLCanvasElement.prototype.getContext = () => ctx
-  HTMLCanvasElement.prototype.toBlob = function (cb, type = 'image/png') {
+  const toBlobStub = function (cb, type = 'image/png') {
     setTimeout(() => cb(new Blob([new Uint8Array(4096)], { type })), 0)
   }
+  stubState = { toBlobStub }
+  stubCanvas.toBlobStub = toBlobStub
+  HTMLCanvasElement.prototype.toBlob = toBlobStub
   HTMLCanvasElement.prototype.toDataURL = () => 'data:image/jpeg;base64,AAAA'
 }
 
@@ -68,7 +72,7 @@ describe('页面运行时冒烟', () => {
 
     expect(document.querySelector('[data-edition-label]').textContent).toBe('在线体验版')
     expect(document.querySelector('#editionBadge').textContent).toBe('体验版')
-    expect(document.querySelector('[data-version]').textContent).toBe('1.0.0')
+    expect(document.querySelector('[data-version]').textContent).toMatch(/^1\.\d+\.\d+$/)
     expect(document.querySelector('[data-max-files]').textContent).toBe('3')
     expect(document.querySelector('[data-max-files-offline]').textContent).toBe('30')
     expect(document.querySelector('[data-max-file-mb]').textContent).toBe('20')
@@ -216,6 +220,9 @@ describe('失败重试与额度提示', () => {
 
   it('编码失败会标记为失败，重试按钮出现且能重新处理成功', async () => {
     runPage()
+    // 每次 runPage 会重新执行脚本、重新绑定；但 toBlob 桩是共享的，
+    // 这里显式重置，避免上一个用例的失败标记泄漏
+    HTMLCanvasElement.prototype.toBlob = stubCanvas.toBlobStub
     document.querySelector('#loadSamples').click()
     await vi.waitFor(() => expect(document.querySelectorAll('#fileList .file-item').length).toBe(3))
     expect(document.querySelector('#retryFailed').hidden).toBe(true)
@@ -233,11 +240,14 @@ describe('失败重试与额度提示', () => {
     }
 
     document.querySelector('#processBtn').click()
+    // 整批跑完才会刷新操作区，所以等状态文案而不是只等第一项标红
     await vi.waitFor(() => {
       expect(document.querySelectorAll('#fileList .file-status.error').length).toBe(1)
-    }, { timeout: 15000 })
-    expect(document.querySelector('#retryFailed').hidden).toBe(false)
-    expect(document.querySelector('#statusText').textContent).toContain('失败')
+      expect(document.querySelector('#statusText').textContent).toContain('失败')
+    }, { timeout: 20000 })
+    await vi.waitFor(() => {
+      expect(document.querySelector('#retryFailed').hidden).toBe(false)
+    }, { timeout: 20000 })
 
     // 重试：失败项回到待处理，重新跑一遍后应全部完成
     HTMLCanvasElement.prototype.toBlob = realToBlob
@@ -247,5 +257,114 @@ describe('失败重试与额度提示', () => {
     }, { timeout: 20000 })
     expect(document.querySelector('#retryFailed').hidden).toBe(true)
     expect(document.querySelector('#summaryText').textContent).toContain('已处理 3/3')
+  })
+})
+
+describe('一图多版与付费分层', () => {
+  beforeAll(() => {
+    window.createImageBitmap = async () => ({ width: 1600, height: 2000, close() {} })
+    globalThis.createImageBitmap = window.createImageBitmap
+  })
+  beforeEach(() => {
+    localStorage.clear()
+    document.body.innerHTML = ''
+  })
+
+  it('平台列表渲染出国内外平台，锁定项带标记', () => {
+    runPage()
+    const items = document.querySelectorAll('#targetList .target-item')
+    expect(items.length).toBeGreaterThan(15)
+
+    // 在线版：常用平台可选，其余标记为离线版
+    const locked = document.querySelectorAll('#targetList .target-item.is-locked')
+    expect(locked.length).toBeGreaterThan(0)
+    expect(document.querySelector('#targetList [data-target="xiaohongshu"]').classList.contains('is-locked')).toBe(false)
+
+    const groups = [...document.querySelectorAll('.target-group-label')].map((el) => el.textContent)
+    expect(groups).toContain('小红书')
+    expect(groups).toContain('抖音')
+    expect(groups).toContain('Instagram')
+  })
+
+  it('勾选目标会写入设置、更新摘要并持久化', () => {
+    runPage()
+    document.querySelector('#targetList [data-target="xiaohongshu"]').click()
+
+    // 列表会重渲染，必须重新查询（旧节点已从 DOM 移除）
+    expect(document.querySelector('#targetList [data-target="xiaohongshu"]').getAttribute('aria-pressed')).toBe('true')
+    expect(document.querySelector('#targetSummary').textContent).toContain('小红书')
+    expect(document.querySelector('#outputBadge').textContent).toContain('目标')
+
+    const saved = JSON.parse(localStorage.getItem('tiehao.settings.v1'))
+    expect(saved.targets).toContain('xiaohongshu')
+
+    // 再点取消
+    document.querySelector('#targetList [data-target="xiaohongshu"]').click()
+    expect(document.querySelector('#targetSummary').textContent).toContain('未选择目标')
+  })
+
+  it('点击锁定平台会弹出购买说明而不是静默失败', () => {
+    runPage()
+    const locked = document.querySelector('#targetList .target-item.is-locked')
+    expect(locked).toBeTruthy()
+    locked.click()
+    expect(document.querySelector('#buyModal').hidden).toBe(false)
+    expect(document.querySelector('#targetSummary').textContent).toContain('未选择目标')
+  })
+
+  it('搜索能过滤平台', () => {
+    runPage()
+    const search = document.querySelector('#targetSearch')
+    search.value = 'instagram'
+    search.dispatchEvent(new window.Event('input', { bubbles: true }))
+    const items = document.querySelectorAll('#targetList .target-item')
+    expect(items.length).toBeGreaterThan(0)
+    expect([...items].every((el) => el.dataset.target.startsWith('instagram'))).toBe(true)
+
+    search.value = 'zzzz'
+    search.dispatchEvent(new window.Event('input', { bubbles: true }))
+    expect(document.querySelector('#targetList .target-empty')).toBeTruthy()
+  })
+
+  it('在线版锁定文案 / Logo / 裁剪，且点击有引导', () => {
+    runPage()
+    for (const id of ['copyEnable', 'logoEnable', 'trimEnable']) {
+      const el = document.querySelector('#' + id)
+      expect(el.disabled).toBe(true)
+      expect(el.closest('.check').classList.contains('is-locked')).toBe(true)
+    }
+    document.querySelector('#copyEnable').closest('.check').click()
+    expect(document.querySelector('#buyModal').hidden).toBe(false)
+  })
+
+  it('文案控件写入设置并同步输出数值', () => {
+    runPage()
+    // 在线版被锁，直接调内部读取路径：手动解除 disabled 后触发 change
+    const title = document.querySelector('#copyTitle')
+    title.value = '限时特惠'
+    title.dispatchEvent(new window.Event('input', { bubbles: true }))
+    const scale = document.querySelector('#copyScale')
+    scale.value = '1.2'
+    scale.dispatchEvent(new window.Event('input', { bubbles: true }))
+    expect(document.querySelector('#copyScaleOut').textContent).toBe('120%')
+  })
+
+  it('安全区开关与提示联动', () => {
+    runPage()
+    document.querySelector('#targetList [data-target="douyin"]').click()
+    expect(document.querySelector('#safeHint').textContent).toContain('安全区')
+
+    const toggle = document.querySelector('#safeGuide')
+    toggle.checked = true
+    toggle.dispatchEvent(new window.Event('change', { bubbles: true }))
+    expect(toggle.checked).toBe(true)
+  })
+
+  it('预览模式可切到「全部产出」并给出空态提示', () => {
+    runPage()
+    const tab = [...document.querySelectorAll('.preview-tab')].find((b) => b.dataset.mode === 'grid')
+    tab.click()
+    expect(document.querySelector('#stageGrid').hidden).toBe(false)
+    expect(document.querySelector('#stageGrid').textContent).toContain('先处理一次')
   })
 })

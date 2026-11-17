@@ -7,6 +7,11 @@ import {
   compressionPlan,
   scaleCanvas,
 } from './canvas-plan.js'
+import { normalizeCopy, copyIsActive, drawCopyLayer, toneColors } from './typography.js'
+import { normalizeLogo, drawLogo, logoReady } from './logo.js'
+import { trimCanvas, focusRect } from './trim.js'
+import { safeWatermarkPlacements } from './canvas-plan.js'
+import { buildOutputName, safeSlug, safeRect } from './platforms.js'
 
 const MAX_CANVAS_PIXELS = 64_000_000
 
@@ -22,7 +27,9 @@ function strokeColorFor(hex) {
   return luminance > 0.62 ? 'rgba(0,0,0,0.42)' : 'rgba(255,255,255,0.5)'
 }
 
-export function drawWatermark(ctx, wm, W, H) {
+const WATERMARK_FAMILY = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif'
+
+export function drawWatermark(ctx, wm, W, H, layout = {}) {
   const text = String(wm.text || '').trim()
   if (!text) return
   const spec = watermarkFontSpec(wm, W)
@@ -34,9 +41,17 @@ export function drawWatermark(ctx, wm, W, H) {
   if (wm.stroke) {
     ctx.lineWidth = Math.max(1, spec.px / 14)
     ctx.strokeStyle = strokeColorFor(wm.color)
+  } else {
+    // 没有描边时给一层极轻的柔光阴影：浅色底上的白水印也不会糊成一片
+    ctx.shadowColor = 'rgba(0,0,0,0.34)'
+    ctx.shadowBlur = Math.max(2, spec.px / 5)
+    ctx.shadowOffsetX = 0
+    ctx.shadowOffsetY = Math.max(1, spec.px / 40)
   }
   const textWidth = ctx.measureText(text).width
-  const placements = watermarkPlacements({ text, textWidth, wm, W, H })
+  const placements = layout.box
+    ? safeWatermarkPlacements({ text, textWidth, wm, W, H, box: layout.box, safe: layout.safe })
+    : watermarkPlacements({ text, textWidth, wm, W, H })
   for (const p of placements) {
     ctx.save()
     ctx.translate(p.x, p.y)
@@ -83,21 +98,101 @@ export async function decodeImage(file) {
   }
 }
 
-/** 把源图合成到目标画布：填充 / 裁切 + 水印。 */
-export function composeCanvas(source, srcW, srcH, w, h, settings) {
+/**
+ * 计算白边裁剪框（原图坐标）。返回 null 表示不需要裁。
+ * 独立导出便于在 processFile 里先据此决定输出尺寸。
+ */
+export function computeTrimCrop(source, srcW, srcH, trim) {
+  if (!trim || !trim.enabled) return null
+  const probe = document.createElement('canvas')
+  probe.width = srcW
+  probe.height = srcH
+  probe.getContext('2d').drawImage(source, 0, 0, srcW, srcH)
+  const trimmed = trimCanvas(probe, {
+    bg: trim.bg || '#ffffff',
+    tolerance: trim.tolerance ?? 14,
+    pad: trim.pad ?? 0.02,
+  })
+  if (!trimmed.trimmed) return null
+  const b = trimmed.box
+  const sx = Math.max(0, Math.min(srcW - 1, Math.round(b.x)))
+  const sy = Math.max(0, Math.min(srcH - 1, Math.round(b.y)))
+  return {
+    sx,
+    sy,
+    sw: Math.max(1, Math.min(srcW - sx, Math.round(b.w))),
+    sh: Math.max(1, Math.min(srcH - sy, Math.round(b.h))),
+  }
+}
+
+/**
+ * 把源图合成到目标画布：焦点裁切 → 白边裁剪 → 文案层 → 水印 → 品牌标识。
+ * opts.crop：外部已算好的裁剪框（避免重复探测）。
+ * opts.srcSize：裁剪后的有效源尺寸，用于 fit 计算。
+ * opts.logoImage 是已解码的 HTMLImageElement（异步解码在调用前完成）。
+ */
+export function composeCanvas(source, srcW, srcH, w, h, settings, opts = {}) {
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
+  const copy = settings.copy && copyIsActive(settings.copy) ? normalizeCopy(settings.copy) : null
+
   if (settings.fit === 'contain') {
     ctx.fillStyle = settings.bg
     ctx.fillRect(0, 0, w, h)
   }
-  const r = fitRect(srcW, srcH, w, h, settings.fit)
+
+  const crop = opts.crop !== undefined ? opts.crop : computeTrimCrop(source, srcW, srcH, settings.trim)
+  const dw = crop ? crop.sw : srcW
+  const dh = crop ? crop.sh : srcH
+
+  // 把（可能已裁切的）源图按 fit 规则画进目标画布
+  let drawnBox = null
+  const drawInto = (target, srcWidth, srcHeight) => {
+    const focus = settings.focus || { x: 0.5, y: 0.5 }
+    const prefix = crop ? [source, crop.sx, crop.sy, crop.sw, crop.sh] : [source]
+    const r = settings.fit === 'cover'
+      ? focusRect(srcWidth, srcHeight, w, h, focus)
+      : fitRect(srcWidth, srcHeight, w, h, 'contain')
+    target.drawImage(...prefix, Math.round(r.dx), Math.round(r.dy), r.drawW, r.drawH)
+    drawnBox = { x: Math.round(r.dx), y: Math.round(r.dy), w: r.drawW, h: r.drawH }
+  }
+
   ctx.imageSmoothingEnabled = true
   ctx.imageSmoothingQuality = 'high'
-  ctx.drawImage(source, r.dx, r.dy, r.drawW, r.drawH)
-  if (settings.wm && settings.wm.enabled) drawWatermark(ctx, settings.wm, w, h)
+  drawInto(ctx, dw, dh)
+
+  // 安全区参考线（只用于预览叠加，不进入成品）
+  if (opts.safeGuide && opts.preset) {
+    const r = safeRect(opts.preset)
+    ctx.save()
+    ctx.strokeStyle = 'rgba(200,64,42,0.9)'
+    ctx.setLineDash([Math.round(w * 0.012), Math.round(w * 0.008)])
+    ctx.lineWidth = Math.max(2, Math.round(w * 0.003))
+    ctx.strokeRect(r.x, r.y, r.w, r.h)
+    ctx.restore()
+  }
+
+  // 文案层（会自行处理遮挡与渐变）
+  if (copy) drawCopyLayer(ctx, copy, w, h)
+
+  // 文字水印
+  if (settings.wm && settings.wm.enabled) {
+    drawWatermark(ctx, settings.wm, w, h, {
+      box: drawnBox,
+      safe: opts.preset ? safeRect(opts.preset) : null,
+    })
+  }
+
+  // 品牌标识
+  if (settings.logo && logoReady(settings.logo)) {
+    if (opts.logoImage) ctx.__logoImage = opts.logoImage
+    const fam = copy ? WATERMARK_FAMILY : WATERMARK_FAMILY
+    drawLogo(ctx, settings.logo, w, h, fam)
+    delete ctx.__logoImage
+  }
+
   return canvas
 }
 
@@ -136,9 +231,30 @@ export async function encodeToTarget(canvas, settings) {
   return last
 }
 
+/** 解码用户上传的品牌 logo（data URL → Image），失败返回 null。 */
+export async function decodeLogoImage(logo) {
+  const l = normalizeLogo(logo)
+  if (!l.enabled || l.mode !== 'image' || !l.imageDataUrl) return null
+  try {
+    const res = await fetch(l.imageDataUrl)
+    const blob = await res.blob()
+    const bmp = await createImageBitmap(blob).catch(() => null)
+    if (bmp) return bmp
+    return await new Promise((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = reject
+      el.src = l.imageDataUrl
+    })
+  } catch {
+    return null
+  }
+}
+
 /**
- * 处理单张图片，返回可打包的结果。
- * opts: { maxMegapixels = 40 }
+ * 处理单张图片，按「一个目标规格」输出。
+ * spec: { preset|null, w, h, fit, format, quality, targetKB }
+ * opts: { maxMegapixels, logoImage, index, template, safeGuide }
  */
 export async function processFile(file, settings, opts = {}) {
   const decoded = await decodeImage(file)
@@ -150,15 +266,43 @@ export async function processFile(file, settings, opts = {}) {
     if (mp > maxMp) {
       throw new Error(`图片 ${mp.toFixed(1)}MP，超过单张 ${maxMp}MP 上限`)
     }
-    const { w, h } = resolveCanvasSize(settings, srcW, srcH)
+
+    const spec = { ...settings, ...(opts.spec || {}) }
+    const preset = opts.preset || null
+
+    // 白边裁剪会改变「原图尺寸」：必须先把裁剪框算出来，
+    // 否则「保持原尺寸」会把裁掉的留白又补回来
+    const crop = computeTrimCrop(decoded.source, srcW, srcH, spec.trim)
+    const effW = crop ? crop.sw : srcW
+    const effH = crop ? crop.sh : srcH
+
+    const { w, h } = preset
+      ? { w: preset.w, h: preset.h }
+      : resolveCanvasSize(spec, effW, effH)
+
     if (w * h > MAX_CANVAS_PIXELS) {
       throw new Error('输出画布过大，请把自定义尺寸调到 8000px 以内')
     }
-    const canvas = composeCanvas(decoded.source, srcW, srcH, w, h, settings)
-    const out = await encodeToTarget(canvas, settings)
-    const ext = extForMime(settings.format)
+
+    const canvas = composeCanvas(decoded.source, srcW, srcH, w, h, spec, {
+      logoImage: opts.logoImage,
+      safeGuide: opts.safeGuide,
+      preset,
+      crop,
+    })
+    const out = await encodeToTarget(canvas, spec)
+    const ext = extForMime(spec.format)
+    const platformLabel = preset ? preset.platform : ''
+    const base = baseName(file.name || 'image')
+    const template = opts.template || spec.nameTemplate
+    const name = template
+      ? buildOutputName(template, {
+        name: base, platform: platformLabel, w: out.width, h: out.height, index: opts.index ?? 1, ext,
+      })
+      : `${base}.${ext}`
+
     return {
-      name: `${baseName(file.name || 'image')}.${ext}`,
+      name,
       blob: out.blob,
       width: out.width,
       height: out.height,
@@ -168,18 +312,55 @@ export async function processFile(file, settings, opts = {}) {
       beforeBytes: file.size,
       afterBytes: out.blob.size,
       canvas,
+      presetId: preset?.id || null,
+      platform: platformLabel,
+      targetName: preset?.name || '',
     }
   } finally {
     decoded.dispose()
   }
 }
 
+/**
+ * 一次合成、多目标输出：同一张原图导出 N 份规格。
+ * 返回 [{ spec, result }]，失败的项带 error 但不会中断其它目标。
+ */
+export async function processFileToTargets(file, settings, targets, opts = {}) {
+  const results = []
+  for (let i = 0; i < targets.length; i += 1) {
+    const preset = targets[i]
+    try {
+      const result = await processFile(file, settings, {
+        ...opts,
+        preset,
+        index: (opts.index ?? 1) + i,
+      })
+      results.push({ preset, result })
+    } catch (err) {
+      results.push({ preset, error: err.message })
+    }
+  }
+  return results
+}
+
 /** 仅合成预览（不压缩），返回画布与尺寸。 */
-export async function composePreview(file, settings) {
+export async function composePreview(file, settings, opts = {}) {
   const decoded = await decodeImage(file)
   try {
-    const { w, h } = resolveCanvasSize(settings, decoded.width, decoded.height)
-    const canvas = composeCanvas(decoded.source, decoded.width, decoded.height, w, h, settings)
+    const preset = opts.preset || null
+    const crop = computeTrimCrop(decoded.source, decoded.width, decoded.height, settings.trim)
+    const effW = crop ? crop.sw : decoded.width
+    const effH = crop ? crop.sh : decoded.height
+    const { w, h } = preset
+      ? { w: preset.w, h: preset.h }
+      : resolveCanvasSize(settings, effW, effH)
+    const logoImage = opts.logoImage !== undefined ? opts.logoImage : await decodeLogoImage(settings.logo)
+    const canvas = composeCanvas(decoded.source, decoded.width, decoded.height, w, h, settings, {
+      logoImage,
+      safeGuide: opts.safeGuide,
+      preset,
+      crop,
+    })
     return { canvas, width: w, height: h }
   } finally {
     decoded.dispose()

@@ -1,4 +1,7 @@
 import { clamp } from './format.js'
+import { normalizeCopy, DEFAULT_COPY } from './typography.js'
+import { normalizeLogo, DEFAULT_LOGO } from './logo.js'
+import { normalizeTargets, PLATFORM_PRESETS } from './platforms.js'
 
 /** 画布预设。w/h 为 null 表示跟随原图或取自定义值。 */
 export const CANVAS_PRESETS = [
@@ -39,6 +42,18 @@ export const DEFAULT_SETTINGS = {
   format: 'image/jpeg',
   quality: 0.85,
   targetKB: 500,
+  // 一图多版：勾选的平台目标（空 = 用上面的「画布+适配」单目标）
+  targets: [],
+  // 裁切焦点（cover 时生效，0-1，默认居中）
+  focus: { x: 0.5, y: 0.5 },
+  // 白边裁剪
+  trim: { enabled: false, bg: '#ffffff', tolerance: 14, pad: 0.02 },
+  // 文案层（标题 / 卖点 / 价签）
+  copy: { ...DEFAULT_COPY },
+  // 品牌标识（文字或上传 PNG）
+  logo: { ...DEFAULT_LOGO, enabled: false },
+  // 文件名模板，占位符 {name} {platform} {w} {h} {index} {ext}
+  nameTemplate: '{name}-{platform}-{w}x{h}',
   wm: {
     enabled: true,
     text: '@你的品牌',
@@ -85,6 +100,21 @@ export function normalizeSettings(raw) {
     format: oneOf(src.format, OUTPUT_FORMATS.map((f) => f.id), DEFAULT_SETTINGS.format),
     quality: num(src.quality, DEFAULT_SETTINGS.quality, 0.3, 1),
     targetKB: Math.round(num(src.targetKB, DEFAULT_SETTINGS.targetKB, 0, 20000)),
+    targets: normalizeTargets(src.targets).map((p) => p.id),
+    focus: {
+      x: num(src.focus?.x, 0.5, 0, 1),
+      y: num(src.focus?.y, 0.5, 0, 1),
+    },
+    trim: {
+      enabled: bool(src.trim?.enabled, false),
+      bg: /^#[0-9a-fA-F]{6}$/.test(src.trim?.bg || '') ? src.trim.bg : '#ffffff',
+      tolerance: Math.round(num(src.trim?.tolerance, 14, 0, 80)),
+      pad: num(src.trim?.pad, 0.02, 0, 0.2),
+    },
+    copy: normalizeCopy(src.copy),
+    logo: normalizeLogo(src.logo),
+    // 允许用户清空模板（表示用原文件名），所以这里不用 str() 的「空则回落」逻辑
+    nameTemplate: typeof src.nameTemplate === 'string' ? src.nameTemplate.slice(0, 60) : DEFAULT_SETTINGS.nameTemplate,
     wm: {
       enabled: bool(wm.enabled, DEFAULT_SETTINGS.wm.enabled),
       text: str(wm.text, DEFAULT_SETTINGS.wm.text, 40),

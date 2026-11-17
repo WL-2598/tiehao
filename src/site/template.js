@@ -33,9 +33,9 @@ export function renderTemplate() {
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <p class="eyebrow">给小创作者和小卖家的出图工具</p>
-        <h1>把一批图，变成<br /><em>能直接发的一组图。</em></h1>
-        <p class="lede">统一画布、品牌水印、目标体积压缩、ZIP 打包，一次做完。图片只在你自己的浏览器里处理，不上传、无需注册。</p>
+        <p class="eyebrow">一次上传，全平台铺开</p>
+        <h1>一张原图，<br /><em>导出全平台要的所有尺寸。</em></h1>
+        <p class="lede">勾选小红书、抖音、淘宝、Instagram……一次处理好文案、Logo、水印与体积，直接拿到 <b>24 个平台</b>的成品。图片只在你的浏览器里处理，不上传、不注册。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#tool">免费试用<span data-max-files>3</span>张</a>
           <button class="btn btn-ghost" type="button" data-buy>离线批量版 ¥<span data-price>29</span></button>
@@ -72,8 +72,8 @@ export function renderTemplate() {
     <div class="wrap stats-grid">
       <div class="stat"><b><span data-count="100" data-suffix="%">0%</span></b><span>图片在本地处理</span></div>
       <div class="stat"><b><span data-count="0">0</span></b><span>数据上传到服务器</span></div>
-      <div class="stat"><b><span data-count="30">0</span> 张</b><span>离线版每批</span></div>
-      <div class="stat"><b>¥<span data-count="29">0</span></b><span>离线版一次买断</span></div>
+      <div class="stat"><b><span data-count="24">0</span> 个</b><span>平台 / 交付规格</span></div>
+      <div class="stat"><b>¥<span data-count="29">0</span></b><span>一次买断 · 不订阅</span></div>
     </div>
   </section>
 
@@ -86,34 +86,34 @@ export function renderTemplate() {
       </div>
       <div class="feature-grid">
         <article class="feature-card reveal" style="--d:.02s">
-          <div class="feature-icon"><span data-icon="crop"></span></div>
-          <h3>常用画布预设</h3>
-          <p>3:4 竖版图文、1:1 商品方图、16:9 横版封面、9:16 视频画面，也支持保持原尺寸与自定义尺寸。</p>
+          <div class="feature-icon"><span data-icon="grid"></span></div>
+          <h3>一图多版，一次导出</h3>
+          <p>勾选多个平台目标，同一张原图按 24 种规格分别输出。不用再为每个平台手动改一遍尺寸——这是最费时间的那一步。</p>
         </article>
-        <article class="feature-card reveal" style="--d:.06s">
-          <div class="feature-icon pine"><span data-icon="layers"></span></div>
-          <h3>留白或裁切</h3>
-          <p>完整保留构图就留白并自定义底色；要铺满画面就居中裁切。批量应用，每张都一致。</p>
+        <article class="feature-card reveal pine" style="--d:.06s">
+          <div class="feature-icon pine"><span data-icon="type"></span></div>
+          <h3>文案直接排进图里</h3>
+          <p>标题、卖点、角标、价签、页脚，6 种版式自动排版并处理文字遮挡与对比度。不用再开设计软件拼图。</p>
         </article>
         <article class="feature-card reveal" style="--d:.1s">
-          <div class="feature-icon gold"><span data-icon="type"></span></div>
-          <h3>品牌文字水印</h3>
-          <p>五个位置、平铺满图、大小透明度、字体与描边都能调。调好存成预设，下次一键载入。</p>
+          <div class="feature-icon gold"><span data-icon="eye"></span></div>
+          <h3>安全区预览</h3>
+          <p>每个平台都会用 UI 压住画面边缘（抖音右侧、微博底部…）。按目标平台画出安全区，主体不会被裁掉。</p>
         </article>
         <article class="feature-card reveal" style="--d:.14s">
-          <div class="feature-icon"><span data-icon="gauge"></span></div>
-          <h3>目标体积压缩</h3>
-          <p>按目标 KB 收敛 JPEG / WebP 输出，先降质量、必要时再缩画布，尽量保住清晰度。</p>
+          <div class="feature-icon"><span data-icon="layers"></span></div>
+          <h3>品牌标识与白边裁剪</h3>
+          <p>上传一次 Logo，批量贴到每张图的指定角落；商品图的白底留白自动裁掉，构图立刻紧凑。</p>
         </article>
-        <article class="feature-card reveal" style="--d:.18s">
-          <div class="feature-icon pine"><span data-icon="archive"></span></div>
-          <h3>ZIP + CSV 清单</h3>
-          <p>一键打包全部成品，附带 manifest.csv（原文件、画布、格式、体积变化），方便对账与归档。</p>
+        <article class="feature-card reveal pine" style="--d:.18s">
+          <div class="feature-icon pine"><span data-icon="gauge"></span></div>
+          <h3>目标体积 + 焦点裁切</h3>
+          <p>按目标 KB 收敛 JPEG / WebP；铺满裁切时可拖动焦点，决定保留构图里的哪一块。</p>
         </article>
         <article class="feature-card reveal" style="--d:.22s">
-          <div class="feature-icon gold"><span data-icon="sliders"></span></div>
-          <h3>品牌预设</h3>
-          <p>把常用的画布、水印、压缩组合存进浏览器，支持 JSON 导入导出，换电脑也能带走。</p>
+          <div class="feature-icon gold"><span data-icon="archive"></span></div>
+          <h3>按平台分目录打包</h3>
+          <p>ZIP 内按平台建目录，附 manifest.csv（原文件→输出文件、画布、体积变化），交付与归档都能直接对账。</p>
         </article>
       </div>
     </div>
@@ -125,23 +125,29 @@ export function renderTemplate() {
         <p class="section-eyebrow">用法</p>
         <h2>三步，从原图到成品</h2>
       </div>
-      <div class="steps">
+      <div class="steps steps-4">
         <article class="step reveal">
           <span class="step-num">壹</span>
-          <h3>拖入图片</h3>
-          <p>支持拖拽、点击选择，或直接粘贴截图。JPEG、PNG、WebP 都可以。</p>
+          <h3>拖入原图</h3>
+          <p>拖拽或粘贴，一次可以放一整批。JPEG、PNG、WebP 都支持，单张 ≤ <b data-max-file-mb>20</b>MB。</p>
           <span class="step-arrow"><span data-icon="arrow"></span></span>
         </article>
-        <article class="step reveal" style="--d:.08s">
+        <article class="step reveal" style="--d:.06s">
           <span class="step-num">贰</span>
-          <h3>设好画布与水印</h3>
-          <p>选画布、选填充方式、调水印和压缩。预览会实时跟着设置变。</p>
+          <h3>勾选要投放的平台</h3>
+          <p>小红书 3:4、抖音 9:16、淘宝主图、Instagram……一个原图可以同时勾多个目标，每个目标一套规格。</p>
           <span class="step-arrow"><span data-icon="arrow"></span></span>
         </article>
-        <article class="step reveal" style="--d:.16s">
+        <article class="step reveal" style="--d:.12s">
           <span class="step-num">叁</span>
-          <h3>打包导出</h3>
-          <p>一键处理整批，下载 ZIP 与 CSV 清单，也可以只下载当前一张。</p>
+          <h3>一次设好排版与品牌</h3>
+          <p>文案版式、Logo 位置、白边裁剪、焦点与安全区——设置一次，整批图都按同一套规则出。</p>
+          <span class="step-arrow"><span data-icon="arrow"></span></span>
+        </article>
+        <article class="step reveal" style="--d:.18s">
+          <span class="step-num">肆</span>
+          <h3>拿到分好目录的 ZIP</h3>
+          <p>ZIP 按平台分目录，附 manifest.csv 对账。文件名自动带平台与尺寸，拖进后台就能发。</p>
         </article>
       </div>
     </div>
@@ -176,7 +182,24 @@ export function renderTemplate() {
       <div class="workbench">
         <aside class="panel settings" aria-label="输出设置">
           <details class="set-group" open>
-            <summary><span class="set-num">1</span>画布与填充<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <summary><span class="set-num">1</span>目标平台 · 一图多版<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <div class="set-body">
+              <p class="hint">勾选要投放的平台，一次导出多套规格。取消全选则使用下方自定义画布。</p>
+              <div class="target-toolbar">
+                <input type="search" id="targetSearch" placeholder="搜索平台 / 规格" aria-label="搜索平台" />
+                <button class="btn btn-ghost btn-sm" id="targetClear" type="button">清空</button>
+              </div>
+              <div class="target-list" id="targetList" role="group" aria-label="目标平台"></div>
+              <div class="target-summary" id="targetSummary">未选择目标</div>
+              <label class="field">文件名模板
+                <input type="text" id="nameTemplate" value="{name}-{platform}-{w}x{h}" maxlength="60" />
+                <span class="hint">可用：{name} {platform} {w} {h} {index} {ext}</span>
+              </label>
+            </div>
+          </details>
+
+          <details class="set-group" open>
+            <summary><span class="set-num">2</span>画布与填充<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
             <div class="set-body">
               <label class="field">常用画布
                 <select id="preset">
@@ -204,11 +227,19 @@ export function renderTemplate() {
                 <input type="color" id="bgColor" value="#f6f1e8" />
                 <span class="hint">仅“留白”模式生效</span>
               </label>
+              <div class="field" id="focusField">
+                <span class="field-label">裁切焦点</span>
+                <div class="focus-pad" id="focusPad" role="application" aria-label="拖拽调整裁切焦点">
+                  <span class="focus-dot" id="focusDot"></span>
+                  <span class="focus-hint">拖动圆点，决定铺满时保留哪一块</span>
+                </div>
+                <button class="reset-link" id="focusReset" type="button">回到居中</button>
+              </div>
             </div>
           </details>
 
           <details class="set-group" open>
-            <summary><span class="set-num">2</span>品牌水印<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <summary><span class="set-num">3</span>品牌水印<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
             <div class="set-body">
               <label class="check"><input type="checkbox" id="wmEnable" checked /> 添加文字水印</label>
               <div id="wmFields">
@@ -263,8 +294,114 @@ export function renderTemplate() {
             </div>
           </details>
 
+          <details class="set-group">
+            <summary><span class="set-num">3b</span>文案排版 · 一体出图<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <div class="set-body">
+              <p class="hint">输入文案，直接把标题 / 卖点 / 价签排进图里，不用再开设计软件。</p>
+              <label class="check"><input type="checkbox" id="copyEnable" /> 启用文案层</label>
+              <div id="copyFields" class="is-disabled">
+                <label class="field">排版
+                  <select id="copyLayout"></select>
+                  <span class="hint" id="copyLayoutHint"></span>
+                </label>
+                <label class="field">配色
+                  <select id="copyTone"></select>
+                </label>
+                <div class="field-row" id="copyCustomColors" hidden>
+                  <label class="field">底色<input type="color" id="copyBg" value="#1b1812" /></label>
+                  <label class="field">文字<input type="color" id="copyFg" value="#fffdf8" /></label>
+                  <label class="field">强调<input type="color" id="copyAccent" value="#e06a4e" /></label>
+                </div>
+                <label class="field">主标题
+                  <textarea id="copyTitle" rows="2" maxlength="60" placeholder="一句话说清你在卖什么"></textarea>
+                </label>
+                <label class="field">副标题
+                  <input type="text" id="copySubtitle" maxlength="80" placeholder="补充说明，可留空" />
+                </label>
+                <label class="field">卖点（逗号或换行分隔）
+                  <textarea id="copyPoints" rows="2" maxlength="160" placeholder="顺丰包邮，现货当天发"></textarea>
+                </label>
+                <div class="field-row">
+                  <label class="field">角标<input type="text" id="copyBadge" maxlength="12" placeholder="新品" /></label>
+                  <label class="field">价格<input type="text" id="copyPrice" maxlength="16" placeholder="¥99" /></label>
+                </div>
+                <div class="field-row">
+                  <label class="field">价格说明<input type="text" id="copyPriceNote" maxlength="24" placeholder="起 / 限今日" /></label>
+                  <label class="field">页脚<input type="text" id="copyFooter" maxlength="40" placeholder="@你的品牌" /></label>
+                </div>
+                <div class="field">
+                  <span class="field-label">对齐</span>
+                  <div class="seg" role="group" aria-label="文字对齐">
+                    <button class="seg-btn active" type="button" data-align="left">左</button>
+                    <button class="seg-btn" type="button" data-align="center">中</button>
+                    <button class="seg-btn" type="button" data-align="right">右</button>
+                  </div>
+                </div>
+                <label class="field">字号 <output class="range-val" id="copyScaleOut">100%</output>
+                  <input type="range" id="copyScale" min="0.6" max="1.6" step="0.05" value="1" />
+                </label>
+                <label class="field">遮挡强度 <output class="range-val" id="copyScrimOut">55%</output>
+                  <input type="range" id="copyScrim" min="0" max="0.92" step="0.02" value="0.55" />
+                </label>
+              </div>
+            </div>
+          </details>
+
+          <details class="set-group">
+            <summary><span class="set-num">3c</span>品牌标识 / Logo<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <div class="set-body">
+              <label class="check"><input type="checkbox" id="logoEnable" /> 添加品牌标识</label>
+              <div id="logoFields" class="is-disabled">
+                <div class="seg" role="group" aria-label="标识类型">
+                  <button class="seg-btn active" type="button" data-logo-mode="text">文字标识</button>
+                  <button class="seg-btn" type="button" data-logo-mode="image">上传 Logo</button>
+                </div>
+                <label class="field" id="logoTextField">标识文字
+                  <input type="text" id="logoText" maxlength="24" placeholder="@你的品牌" />
+                </label>
+                <div class="field" id="logoImageField" hidden>
+                  <button class="btn btn-ghost btn-sm" id="logoPick" type="button">选择 PNG / WebP</button>
+                  <input type="file" id="logoInput" accept="image/png,image/webp,image/jpeg" hidden />
+                  <p class="hint" id="logoImageHint">建议使用透明背景 PNG，宽度 ≥ 400px。</p>
+                </div>
+                <div class="field">
+                  <span class="field-label">位置</span>
+                  <div class="seg" role="group" aria-label="标识位置">
+                    <button class="seg-btn active" type="button" data-logo-pos="tl">左上</button>
+                    <button class="seg-btn" type="button" data-logo-pos="tr">右上</button>
+                    <button class="seg-btn" type="button" data-logo-pos="bl">左下</button>
+                    <button class="seg-btn" type="button" data-logo-pos="br">右下</button>
+                  </div>
+                </div>
+                <label class="field">大小 <output class="range-val" id="logoSizeOut">4%</output>
+                  <input type="range" id="logoSize" min="1.5" max="22" step="0.5" value="4" />
+                </label>
+                <label class="field">不透明度 <output class="range-val" id="logoOpacityOut">90%</output>
+                  <input type="range" id="logoOpacity" min="0.1" max="1" step="0.05" value="0.9" />
+                </label>
+                <label class="check"><input type="checkbox" id="logoPlate" checked /> 加白色背板（深色图上更清晰）</label>
+              </div>
+            </div>
+          </details>
+
+          <details class="set-group">
+            <summary><span class="set-num">3d</span>白边裁剪<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <div class="set-body">
+              <label class="check"><input type="checkbox" id="trimEnable" /> 自动裁掉白边</label>
+              <div id="trimFields" class="is-disabled">
+                <label class="field">识别底色
+                  <input type="color" id="trimBg" value="#ffffff" />
+                  <span class="hint">商品图常见白底；浅灰底就用吸管取一下背景色</span>
+                </label>
+                <label class="field">容差 <output class="range-val" id="trimToleranceOut">14</output>
+                  <input type="range" id="trimTolerance" min="0" max="80" step="2" value="14" />
+                </label>
+              </div>
+            </div>
+          </details>
+
           <details class="set-group" open>
-            <summary><span class="set-num">3</span>格式与压缩<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <summary><span class="set-num">4</span>格式与压缩<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
             <div class="set-body">
               <label class="field">输出格式
                 <select id="format">
@@ -289,7 +426,7 @@ export function renderTemplate() {
           </details>
 
           <details class="set-group" open>
-            <summary><span class="set-num">4</span>品牌预设<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
+            <summary><span class="set-num">5</span>品牌预设<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
             <div class="set-body">
               <div class="preset-row">
                 <select id="brandSelect" aria-label="品牌预设"><option value="">选择预设…</option></select>
@@ -326,20 +463,31 @@ export function renderTemplate() {
               <button class="preview-tab" type="button" data-mode="before" role="tab">原图</button>
               <button class="preview-tab active" type="button" data-mode="after" role="tab">效果</button>
               <button class="preview-tab" type="button" data-mode="compare" role="tab">对比</button>
+              <button class="preview-tab" type="button" data-mode="grid" role="tab">全部产出</button>
             </div>
             <span class="stage-dims" id="stageDims"></span>
           </div>
-          <div class="stage" id="stage" data-mode="after">
-            <div class="stage-empty" id="stageEmpty">选择或拖入图片后在这里预览</div>
-            <img class="before-img" id="imgBefore" alt="原图预览" />
-            <div class="after-wrap" id="imgAfterWrap">
-              <img id="imgAfter" alt="效果预览" />
-            </div>
-            <span class="stage-tag before">原图</span>
-            <span class="stage-tag after">效果</span>
-            <div class="compare-handle" id="compareHandle"></div>
-            <input class="visually-hidden" type="range" id="compareRange" min="0" max="100" value="50" aria-label="对比滑块" />
+
+          <div class="stage-tools">
+            <label class="check check-inline"><input type="checkbox" id="safeGuide" /> 安全区参考线</label>
+            <span class="stage-safe-hint" id="safeHint"></span>
           </div>
+
+          <div class="stage-wrap">
+            <div class="stage" id="stage" data-mode="after">
+              <div class="stage-empty" id="stageEmpty">选择或拖入图片后在这里预览</div>
+              <img class="before-img" id="imgBefore" alt="原图预览" />
+              <div class="after-wrap" id="imgAfterWrap">
+                <img id="imgAfter" alt="效果预览" />
+              </div>
+              <span class="stage-tag before">原图</span>
+              <span class="stage-tag after" id="stageTagAfter">效果</span>
+              <div class="compare-handle" id="compareHandle"></div>
+              <input class="visually-hidden" type="range" id="compareRange" min="0" max="100" value="50" aria-label="对比滑块" />
+            </div>
+            <div class="stage-grid" id="stageGrid" hidden></div>
+          </div>
+
           <dl class="meta">
             <div><dt>文件</dt><dd id="metaName">—</dd></div>
             <div><dt>原始</dt><dd id="metaBefore">—</dd></div>
@@ -359,6 +507,7 @@ export function renderTemplate() {
         <aside class="panel queue-panel" aria-label="文件队列">
           <div class="panel-head">
             <h3>队列 <span id="queueCount">0</span></h3>
+            <span class="badge" id="outputBadge">单目标</span>
             <span class="badge" id="editionBadge">体验版</span>
           </div>
           <ul id="fileList" class="file-list"></ul>
@@ -377,48 +526,83 @@ export function renderTemplate() {
     <div class="wrap">
       <div class="section-head center reveal">
         <p class="section-eyebrow">价格</p>
-        <h2>先免费试，再决定买</h2>
-        <p>在线版可以立刻体验完整流程；离线版一次性买断，适合每天批量出图的人。</p>
+        <h2>免费版能干活，付费版省时间</h2>
+        <p>在线版可以完整跑通「裁切 → 水印 → 压缩 → ZIP」。<br />离线版卖的不是解锁功能，是<b>一次交付多个平台的那 20 分钟</b>。</p>
       </div>
+
+      <div class="roi-band reveal">
+        <div class="roi-item">
+          <b id="roiMinutes">—</b>
+          <span>每批 3 个平台 · 手工改尺寸耗时</span>
+        </div>
+        <div class="roi-item">
+          <b id="roiSaved">—</b>
+          <span>用一图多版后节省的时间</span>
+        </div>
+        <div class="roi-item">
+          <b>¥<span data-price>29</span></b>
+          <span>一次买断，不订阅</span>
+        </div>
+      </div>
+
       <div class="price-grid">
         <article class="price-card reveal">
           <h3>在线体验</h3>
           <p class="price">¥0</p>
           <ul>
             <li>每批 <span data-max-files>3</span> 张</li>
-            <li>裁切 / 水印 / 压缩</li>
+            <li>3 个常用平台（小红书 / 抖音 / 淘宝）</li>
+            <li>裁切 / 水印 / 目标体积压缩</li>
             <li>ZIP + CSV 清单</li>
             <li>无需注册，打开就用</li>
           </ul>
           <a class="btn btn-ghost btn-block" href="#tool">立即试用</a>
-          <p class="fine">适合先试一下 workflow 是否顺手。</p>
+          <p class="fine">适合先确认出图质量是否合你的标准。</p>
         </article>
         <article class="price-card featured reveal" style="--d:.08s">
           <div class="ribbon">一次买断</div>
           <h3>离线批量版</h3>
           <p class="price">¥<span data-price>29</span> <small>永久使用</small></p>
           <ul>
-            <li>每批 <span data-max-files-offline>30</span> 张</li>
-            <li>单个 HTML 文件，双击即用，可完全断网</li>
-            <li>品牌预设导入 / 导出</li>
-            <li>ZIP + CSV 清单</li>
-            <li>当前 v1 及后续 v1 修复</li>
+            <li><b>一图多版</b>：24 个平台 / 交付规格，一次导出</li>
+            <li><b>文案排版</b>：6 种版式，标题 / 卖点 / 价签直接进图</li>
+            <li><b>品牌 Logo</b>：上传一次，批量贴到指定角落</li>
+            <li><b>白边裁剪 + 焦点裁切</b></li>
+            <li>按平台分目录打包 + manifest.csv</li>
+            <li>每批 <span data-max-files-offline>30</span> 张，单文件断网可用</li>
           </ul>
           <button class="btn btn-primary btn-block" type="button" data-buy>购买离线版</button>
           <p class="fine">不是订阅。不含云存储、AI 抠图或视频处理。</p>
         </article>
       </div>
+
       <table class="compare-table reveal">
         <thead><tr><th>对比项</th><th>在线体验</th><th>离线批量版</th></tr></thead>
         <tbody>
           <tr><td>每批张数</td><td>3 张</td><td class="yes">30 张</td></tr>
-          <tr><td>裁切 / 水印 / 压缩</td><td class="yes">支持</td><td class="yes">支持</td></tr>
-          <tr><td>ZIP + CSV 清单</td><td class="yes">支持</td><td class="yes">支持</td></tr>
-          <tr><td>断网使用</td><td class="no">不支持</td><td class="yes">支持</td></tr>
-          <tr><td>单文件携带</td><td class="no">不支持</td><td class="yes">支持</td></tr>
-          <tr><td>价格</td><td>免费</td><td class="yes">¥29 一次买断</td></tr>
+          <tr><td>目标平台规格</td><td>3 个</td><td class="yes">24 个（含打印 / 网页交付）</td></tr>
+          <tr><td>一次导出多套尺寸</td><td class="no">—</td><td class="yes">支持，最多 12 个目标 / 张</td></tr>
+          <tr><td>文案排版（标题 / 卖点 / 价签）</td><td class="no">—</td><td class="yes">6 种版式</td></tr>
+          <tr><td>品牌 Logo</td><td class="no">—</td><td class="yes">文字 / 上传图片</td></tr>
+          <tr><td>白边裁剪 · 焦点裁切</td><td class="no">—</td><td class="yes">支持</td></tr>
+          <tr><td>安全区参考线</td><td class="no">—</td><td class="yes">按平台计算</td></tr>
+          <tr><td>裁切 / 水印 / 目标 KB / ZIP</td><td class="yes">支持</td><td class="yes">支持</td></tr>
+          <tr><td>断网使用 · 单文件携带</td><td class="no">不支持</td><td class="yes">支持</td></tr>
+          <tr><td>价格</td><td>免费</td><td class="yes">¥<span data-price>29</span> 一次买断</td></tr>
         </tbody>
       </table>
+
+      <div class="value-notes reveal">
+        <div>
+          <h4>为什么这件事值得付钱</h4>
+          <p>一张原图要发 3 个平台，手工流程是：裁 3 次 → 调 3 次水印 → 压 3 次体积 → 分别改名。按每次 2 分钟算，一批 9 张图就是半小时以上。</p>
+          <p>一图多版把这一步变成一次勾选。买断价 ¥29，等于用不到一杯咖啡的钱，换掉每周重复的机械操作。</p>
+        </div>
+        <div>
+          <h4>为什么不做订阅</h4>
+          <p>这是本地运行的桌面级小工具，没有服务器成本，也不该按月收费。买断之后你拿到的是一个 HTML 文件，存在自己电脑里，服务停止也不影响使用。</p>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -430,24 +614,28 @@ export function renderTemplate() {
       </div>
       <div class="faq-list">
         <details class="reveal" open>
-          <summary>图片会上传吗？</summary>
-          <p>不会。裁切、水印、压缩和打包全部在你的浏览器里完成，页面也不依赖外部字体、脚本或图片。断网后打开在线版生成的页面同样无法回传任何数据——因为数据从来没有离开过你的设备。</p>
+          <summary>在线版和离线版到底差在哪？</summary>
+          <p>在线版能完整跑通裁切、水印、目标体积压缩和 ZIP 导出，只是每批 3 张、只有 3 个常用平台。<b>离线版的核心不是「解锁」，而是「一图多版」</b>：一张原图一次导出 24 种平台规格，再加上文案排版、品牌 Logo、白边裁剪和焦点裁切。这些能力解决的是同一件事——别再为每个平台手工改一遍尺寸。</p>
         </details>
         <details class="reveal">
-          <summary>支持哪些格式？</summary>
-          <p>输入支持 JPEG、PNG、WebP。输出可选 JPEG、WebP、PNG。暂不支持 HEIC、SVG、GIF 动图或 RAW，请先在系统相册或修图软件里导出为上述格式。</p>
+          <summary>图片会上传吗？</summary>
+          <p>不会。裁切、水印、压缩、排版和打包全部在你的浏览器里完成，页面不依赖任何外部字体、脚本或图片。断网后打开离线版同样无法回传任何数据——因为数据从来没有离开过你的设备。</p>
         </details>
         <details class="reveal">
           <summary>这些尺寸是平台官方规定吗？</summary>
-          <p>不是。它们是常见的工作画布，方便统一一组图的构图。各平台规则可能变化，发布前请以平台最新要求为准。</p>
+          <p>不是。它们是各平台常见的工作画布与交付规格，并标注了会压住画面的 UI 区域（安全区）。平台规则可能变化，发布前请以平台最新要求为准。</p>
+        </details>
+        <details class="reveal">
+          <summary>文案排版的字体会不会不一致？</summary>
+          <p>水印与文案使用系统字体渲染。同一台电脑上批量出图完全一致；换到另一台电脑（比如把预设导给同事）字体可能略有差别。这是「完全离线、不加载在线字体」的代价。</p>
         </details>
         <details class="reveal">
           <summary>目标大小压不到怎么办？</summary>
-          <p>工具会先降低压缩质量，仍超标时再按比例缩小画布，并尽量保住清晰度。如果目标 KB 设得比原图还大，或图片本身极小，可能无法精确命中——此时会输出该质量下最小的结果，并在清单里标明实际大小。</p>
+          <p>先降压缩质量，仍超标时再按比例缩小画布。如果目标设得比原图还小很多，可能无法精确命中——此时输出该设置下最小的结果，并在队列与 manifest.csv 里标明「未达目标」，不会假装成功。</p>
         </details>
         <details class="reveal">
-          <summary>水印可以铺满整张图吗？</summary>
-          <p>可以。勾选“平铺”后，水印会按倾斜角度重复铺满画面，适合防盗图；日常使用建议用角落单条水印，更干净。</p>
+          <summary>白边裁剪会不会裁掉主体？</summary>
+          <p>它只裁掉与「识别底色」接近的外圈像素，并且会在四周保留少量余量。识别底色可调，建议先用一张图确认容差再批量跑。</p>
         </details>
         <details class="reveal">
           <summary>离线版怎么用？</summary>
@@ -459,7 +647,7 @@ export function renderTemplate() {
         </details>
         <details class="reveal">
           <summary>开源许可如何处理？</summary>
-          <p>打包使用了 MIT 许可的 JSZip（页面底部与离线包内保留许可声明）。产品自身代码与上游开源组件分开标注。</p>
+          <p>打包使用了 MIT 许可的 JSZip（页面底部与离线包内保留许可声明）。产品自身代码 MIT，与上游开源组件分开标注。</p>
         </details>
       </div>
     </div>
@@ -507,7 +695,12 @@ export function renderTemplate() {
   <div class="modal-card">
     <button class="modal-close" id="buyClose" type="button" aria-label="关闭" data-close>×</button>
     <h3 id="buyTitle">获取离线批量版</h3>
-    <p class="price">¥<span data-price>29</span> <small>一次买断 · 每批 30 张</small></p>
+    <p class="price">¥<span data-price>29</span> <small>一次买断 · 不订阅</small></p>
+    <ul class="buy-points">
+      <li>一图多版：24 个平台规格，一次导出</li>
+      <li>文案排版 · 品牌 Logo · 白边裁剪 · 焦点裁切</li>
+      <li>每批 <span data-max-files-offline>30</span> 张，单个 HTML 文件断网可用</li>
+    </ul>
     <div id="buyReady" hidden>
       <p>点击下方按钮前往安全收款页，付款后下载离线 HTML 文件。若未自动跳转，请保留订单号并联系店主。</p>
       <a class="btn btn-primary btn-block" id="checkoutLink" href="#" target="_blank" rel="noopener">前往安全收款页</a>

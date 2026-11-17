@@ -55,8 +55,10 @@ document.createElement = () => {
 }
 
 const { normalizeSettings } = await import('../src/core/settings.js')
-const { processFile } = await import('../src/core/pipeline.js')
+const { processFile, processFileToTargets, composePreview } = await import('../src/core/pipeline.js')
 const { makeSampleSource } = await import('../src/core/samples.js')
+const { findPreset } = await import('../src/core/platforms.js')
+const { encodeCanvas } = await import('../src/core/format.js').catch(() => ({}))
 
 fs.mkdirSync(OUT, { recursive: true })
 
@@ -83,3 +85,107 @@ for (const [i, spec] of specs.entries()) {
   fs.writeFileSync(path.join(OUT, spec.name), buf)
   console.log(`✓ docs/${spec.name}  ${out.width}×${out.height}  ${(buf.length / 1024).toFixed(0)}KB  · ${spec.label}`)
 }
+
+// —— 一图多版的对比图：同一张原图 → 三个平台规格并排
+const multiSettings = normalizeSettings({
+  targets: ['xiaohongshu', 'douyin', 'taobao-main'],
+  fit: 'contain',
+  bg: '#f6f1e8',
+  format: 'image/jpeg',
+  quality: 0.88,
+  nameTemplate: '{name}-{platform}-{w}x{h}',
+  wm: { enabled: true, text: '@tiehao.shop', pos: 'br', size: 3.2, opacity: 0.8, color: '#ffffff' },
+})
+
+const multiSource = await makeSampleSource(0, { lang: 'en' })
+const multiFile = new File([multiSource], 'hero-shot.jpg', { type: 'image/jpeg' })
+const multiTargets = multiSettings.targets.map(findPreset).filter(Boolean)
+const outs = await processFileToTargets(multiFile, multiSettings, multiTargets, { index: 1 })
+for (const { preset, result } of outs) {
+  const buf = Buffer.from(await result.blob.arrayBuffer())
+  const file = `multi-${preset.id}.jpg`
+  fs.writeFileSync(path.join(OUT, file), buf)
+  console.log(`✓ docs/${file}  ${result.width}×${result.height}  ${(buf.length / 1024).toFixed(0)}KB  · ${preset.platform} ${preset.name}`)
+}
+
+// —— 一张总览：把三个规格缩放到同高，横向拼起来，方便 README 一眼看懂
+// 沙箱里只有 DejaVu 字体，中文标签会变豆腐块，总览统一用英文标注
+const ASCII_PLATFORM = {
+  '小红书': 'Xiaohongshu',
+  '抖音': 'Douyin',
+  '淘宝 / 天猫': 'Taobao / Tmall',
+  '视频号': 'Channels',
+}
+const H = 520
+const imgs = []
+for (const { preset, result } of outs) {
+  const buf = Buffer.from(await result.blob.arrayBuffer())
+  const img = await loadImage(buf)
+  imgs.push({
+    img,
+    w: Math.round((img.width / img.height) * H),
+    h: H,
+    label: (ASCII_PLATFORM[preset.platform] || preset.platform),
+    size: `${preset.name.replace('图文', 'Post').replace('竖屏', 'Vertical').replace('主图', 'Main')} · ${preset.w}×${preset.h}`,
+  })
+}
+const gap = 34
+const labelH = 62
+const TOP = 92
+const totalW = imgs.reduce((a, b) => a + b.w, 0) + gap * (imgs.length + 1)
+const totalH = TOP + H + gap + labelH
+const sheet = createCanvas(totalW, totalH)
+const sctx = sheet.getContext('2d')
+sctx.fillStyle = '#f4efe6'
+sctx.fillRect(0, 0, totalW, totalH)
+sctx.fillStyle = '#3b3630'
+sctx.font = '600 26px DejaVu Sans'
+sctx.fillText('One upload \u2192 three platform sizes', gap, 50)
+sctx.fillStyle = '#7d7368'
+sctx.font = '16px DejaVu Sans'
+sctx.fillText('Same source image, cropped and sized per platform by tiehao.', gap, 76)
+let x = gap
+for (const it of imgs) {
+  sctx.drawImage(it.img, x, TOP, it.w, it.h)
+  sctx.fillStyle = '#3b3630'
+  sctx.font = '600 19px DejaVu Sans'
+  sctx.fillText(it.label, x, TOP + H + 26)
+  sctx.fillStyle = '#7d7368'
+  sctx.font = '15px DejaVu Sans'
+  sctx.fillText(it.size, x, TOP + H + 50)
+  x += it.w + gap
+}
+
+fs.writeFileSync(path.join(OUT, 'multi-version-overview.jpg'), sheet.toBuffer('image/jpeg', 88))
+console.log(`✓ docs/multi-version-overview.jpg  ${totalW}×${totalH}`)
+
+// —— 白边裁剪前后：同一张图左侧原样、右侧裁掉白边
+const padSource = (() => {
+  const c = createCanvas(1000, 1000)
+  const cx = c.getContext('2d')
+  cx.fillStyle = '#ffffff'
+  cx.fillRect(0, 0, 1000, 1000)
+  const inner = createCanvas(520, 520)
+  const ix = inner.getContext('2d')
+  const g = ix.createLinearGradient(0, 0, 520, 520)
+  g.addColorStop(0, '#c9a227')
+  g.addColorStop(1, '#7a3b2e')
+  ix.fillStyle = g
+  ix.fillRect(0, 0, 520, 520)
+  ix.fillStyle = 'rgba(255,255,255,.9)'
+  ix.font = '700 64px DejaVu Sans'
+  ix.fillText('PRODUCT', 40, 280)
+  cx.drawImage(inner, 240, 240)
+  return Buffer.from(c.toBuffer('image/jpeg', 92))
+})()
+const padFile = new File([new Uint8Array(padSource)], 'white-pad.jpg', { type: 'image/jpeg' })
+const before = await processFile(padFile, normalizeSettings({
+  preset: 'original', fit: 'contain', format: 'image/jpeg', quality: 0.9, trim: { enabled: false },
+}))
+const after = await processFile(padFile, normalizeSettings({
+  preset: 'original', fit: 'contain', format: 'image/jpeg', quality: 0.9,
+  trim: { enabled: true, tolerance: 14, pad: 0.02 },
+}))
+fs.writeFileSync(path.join(OUT, 'trim-before.jpg'), Buffer.from(await before.blob.arrayBuffer()))
+fs.writeFileSync(path.join(OUT, 'trim-after.jpg'), Buffer.from(await after.blob.arrayBuffer()))
+console.log(`✓ docs/trim-before.jpg  ${before.width}×${before.height}  →  docs/trim-after.jpg  ${after.width}×${after.height}`)

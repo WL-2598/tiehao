@@ -17,13 +17,24 @@ describe('buildManifest', () => {
     const lines = csv.slice(1).split('\r\n')
     expect(lines).toHaveLength(2)
     expect(lines[0].split(',')).toEqual([
-      '输出文件', '原文件', '画布尺寸', '适配方式', '格式', '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化',
+      '输出文件', '原文件', '平台', '规格', '画布尺寸', '适配方式', '格式',
+      '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化', '是否达标',
     ])
     expect(lines[1]).toContain('a.webp')
     expect(lines[1]).toContain('DSC0001.jpg')
     expect(lines[1]).toContain('1080×1440')
     expect(lines[1]).toContain('WebP')
     expect(lines[1]).toContain('-75.0%')
+  })
+
+  it('带上平台与达标状态', () => {
+    const csv = buildManifest(
+      [{ ...items[0], platform: '小红书', targetName: '图文 3:4', result: { ...items[0].result, hitTarget: false } }],
+      settings,
+    )
+    expect(csv).toContain('小红书')
+    expect(csv).toContain('图文 3:4')
+    expect(csv).toContain('未达目标')
   })
 
   it('含逗号/引号的名字会被转义', () => {

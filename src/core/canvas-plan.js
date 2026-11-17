@@ -82,6 +82,40 @@ export function watermarkPlacements({ text, textWidth, wm, W, H }) {
 }
 
 /**
+ * 水印落点 + 避让安全区：留白画布上下有底色边时，水印压在白边上几乎看不见，
+ * 所以贴边水印会往画面里挪到「图片实际绘制区域」与「安全区」的交集里。
+ * 传入的 box 为图片绘制矩形（canvas-plan 的 fitPlacement 结果）。
+ */
+export function safeWatermarkPlacements({ text, textWidth, wm, W, H, box, safe }) {
+  const base = watermarkPlacements({ text, textWidth, wm, W, H })
+  if (!box) return base
+  const rect = safe || { top: 0, bottom: 0, left: 0, right: 0 }
+  const inset = {
+    top: Math.max(box.y, Math.round(rect.top * H)),
+    left: Math.max(box.x, Math.round(rect.left * W)),
+    right: Math.min(box.x + box.w, W - Math.round(rect.right * W)),
+    bottom: Math.min(box.y + box.h, H - Math.round(rect.bottom * H)),
+  }
+  if (inset.bottom - inset.top < H * 0.1 || inset.right - inset.left < W * 0.1) return base
+  return base.map((p) => {
+    let { x, y } = p
+    if (p.baseline === 'bottom' || p.baseline === 'middle') {
+      y = Math.min(y, inset.bottom - Math.max(2, H * 0.008))
+    }
+    if (p.baseline === 'top' || p.baseline === 'middle') {
+      y = Math.max(y, inset.top + Math.max(2, H * 0.008))
+    }
+    if (p.align === 'right' || p.align === 'center') {
+      x = Math.min(x, inset.right - Math.max(2, W * 0.008))
+    }
+    if (p.align === 'left' || p.align === 'center') {
+      x = Math.max(x, inset.left + Math.max(2, W * 0.008))
+    }
+    return { ...p, x, y }
+  })
+}
+
+/**
  * 目标体积压缩的候选步骤：先降质量，仍超标再按比例缩小画布。
  * 返回按顺序尝试的 [{quality, scale}]，调用方取第一个达标结果。
  */

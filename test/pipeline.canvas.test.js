@@ -252,14 +252,14 @@ describe('真实像素：输出文件名与 ZIP 打包', () => {
   it('输出扩展名跟随格式', async () => {
     const png = makeTestImage(300, 300)
     const file = new File([png], 'IMG_0001.PNG', { type: 'image/png' })
-    const jpeg = await pipeline.processFile(file, S({ preset: 'original', format: 'image/jpeg', wm: { enabled: false } }))
-    const webp = await pipeline.processFile(file, S({ preset: 'original', format: 'image/webp', wm: { enabled: false } }))
+    const jpeg = await pipeline.processFile(file, S({ preset: 'original', format: 'image/jpeg', wm: { enabled: false }, nameTemplate: '' }))
+    const webp = await pipeline.processFile(file, S({ preset: 'original', format: 'image/webp', wm: { enabled: false }, nameTemplate: '' }))
     expect(jpeg.name).toBe('IMG_0001.jpg')
     expect(webp.name).toBe('IMG_0001.webp')
   })
 
   it('ZIP 内含成品、manifest.csv 与说明文件', async () => {
-    const settings = S({ preset: 'portrait34', targetKB: 0, wm: { enabled: false } })
+    const settings = S({ preset: 'portrait34', targetKB: 0, wm: { enabled: false }, nameTemplate: '' })
     const results = []
     for (const [name, w, h] of [['a.png', 400, 300], ['b.png', 300, 500]]) {
       const out = await pipeline.processFile(new File([makeTestImage(w, h)], name, { type: 'image/png' }), settings)
