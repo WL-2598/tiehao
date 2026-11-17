@@ -1,0 +1,27 @@
+{
+  "name": "tiehao",
+  "version": "1.0.0",
+  "private": true,
+  "description": "帖好 TieHao — 浏览器本地批量社交图片工作台（裁切 / 水印 / 压缩 / ZIP+CSV）",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs --dev",
+    "build": "node build.mjs",
+    "preview": "node build.mjs --serve",
+    "pretest": "node build.mjs && node scripts/check-template.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "package": "node build.mjs && node scripts/package.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.1.1",
+    "@playwright/test": "^1.65.1",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^21.0.4",
+    "vitest": "^5.1.0"
+  }
+}
