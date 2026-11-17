@@ -1403,12 +1403,12 @@ function initEditionUI() {
   $('#editionBadge').textContent = EDITION === 'offline' ? '离线批量版' : '体验版'
   document.body.classList.toggle('edition-offline', EDITION === 'offline')
 
-  // 离线版已经买断：隐藏所有购买入口与价格区，避免「买了还被推销」
+  // 离线版已经买断：隐藏所有购买入口，避免「买了还被推销」
   if (EDITION === 'offline') {
     $$('[data-buy]').forEach((el) => { el.hidden = true })
+    $$('[data-buy-link]').forEach((el) => { el.hidden = true })
+    $$('a[href="#pricing"]').forEach((el) => { el.hidden = true })
     $('#pricing')?.setAttribute('hidden', '')
-    const navBuy = document.querySelector('.site-header [data-buy]')
-    if (navBuy) navBuy.hidden = true
   }
 
   // 价格区的 ROI 估算：按「每批 3 平台 × 9 张图 × 2 分钟手工」计算

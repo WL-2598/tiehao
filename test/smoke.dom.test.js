@@ -208,6 +208,25 @@ describe('页面运行时冒烟', () => {
   })
 })
 
+describe('离线版不再推销自己', () => {
+  it('离线产物隐藏价格区、购买按钮与价格导航', async () => {
+    localStorage.clear()
+    const offline = fs.readFileSync(path.join(ROOT, 'product/TieHao-Offline.html'), 'utf8')
+    const scripts = [...offline.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1])
+    document.body.innerHTML = offline.slice(offline.indexOf('<body'), offline.indexOf('</body>') + 7)
+    for (const code of scripts) new Function(code).call(window)
+
+    expect(document.querySelector('#pricing').hidden).toBe(true)
+    const buys = [...document.querySelectorAll('[data-buy]')]
+    expect(buys.length).toBeGreaterThan(0)
+    expect(buys.every((el) => el.hidden)).toBe(true)
+    expect([...document.querySelectorAll('a[href="#pricing"]')].every((el) => el.hidden)).toBe(true)
+    // 工作台仍然可用：目标平台与管理控件照常渲染
+    expect(document.querySelectorAll('#targetList .target-item').length).toBeGreaterThan(10)
+    expect(document.querySelector('#editionBadge').textContent).toBe('离线批量版')
+  })
+})
+
 describe('失败重试与额度提示', () => {
   beforeAll(() => {
     window.createImageBitmap = async () => ({ width: 1600, height: 2000, close() {} })

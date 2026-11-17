@@ -23,7 +23,7 @@ export function renderTemplate() {
     <a href="#features">功能</a>
     <a href="#how">用法</a>
     <a href="#tool">工作台</a>
-    <a href="#pricing">价格</a>
+    <a href="#pricing" data-buy-link>价格</a>
     <a href="#faq">常见问题</a>
   </nav>
   <button class="btn btn-primary btn-sm" type="button" data-buy>获取离线版</button>
@@ -670,7 +670,7 @@ export function renderTemplate() {
         <ul class="footer-links">
           <li><a href="#tool">出图工作台</a></li>
           <li><a href="#features">功能</a></li>
-          <li><a href="#pricing">价格</a></li>
+          <li><a href="#pricing" data-buy-link>价格</a></li>
           <li><a href="#faq">常见问题</a></li>
         </ul>
       </div>
@@ -679,7 +679,7 @@ export function renderTemplate() {
         <ul class="footer-links">
           <li><a href="#faq">隐私与本地处理</a></li>
           <li><a href="#faq">支持的格式</a></li>
-          <li><a href="#pricing">离线版购买</a></li>
+          <li><a href="#pricing" data-buy-link>离线版购买</a></li>
         </ul>
       </div>
     </div>
