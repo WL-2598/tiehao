@@ -691,7 +691,7 @@ export function renderTemplate() {
       </div>
     </div>
     <div class="footer-bottom">
-      <span>帖好 TieHao v<span data-version>1.0.0</span></span>
+      <span>帖好 TieHao v<span data-version>{{VERSION}}</span></span>
       <span>© 2026 帖好 TieHao</span>
       <span>MIT 组件 · 本地处理</span>
     </div>

@@ -88,6 +88,8 @@ async function main() {
     const configJSON = escapeScript(JSON.stringify({ ...config, edition }))
     const html = template
       .replace('{{CSS}}', () => css)
+      // 版本号在构建时注入：没有 JS 或直接看源码时页脚也不会停在旧版本
+      .replace('{{VERSION}}', () => escapeScript(config.version))
       .replace('{{CONFIG}}', () => configJSON)
       .replace('{{APP}}', () => escapeScript(app))
       .replace('{{LICENSES}}', () => licenses.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'))

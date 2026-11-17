@@ -22,6 +22,7 @@ describe('构建产物', () => {
       expect(html).not.toContain('{{APP}}')
       expect(html).not.toContain('{{CONFIG}}')
       expect(html).not.toContain('{{LICENSES}}')
+      expect(html).not.toContain('{{VERSION}}')
     }
   })
 
