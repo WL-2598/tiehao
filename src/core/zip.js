@@ -13,10 +13,13 @@ const FIT_LABEL = { contain: '留白完整', cover: '铺满裁切' }
 export function buildManifest(items, settings) {
   const rows = [[
     '输出文件', '原文件', '平台', '规格', '画布尺寸', '适配方式', '格式',
-    '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化', '是否达标',
+    '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化', '是否达标', '切片', '备注',
   ]]
   for (const item of items) {
     const r = item.result
+    const sliceOf = item.slice && item.slice.total > 1
+      ? `${item.slice.index + 1}/${item.slice.total}`
+      : ''
     rows.push([
       item.outName,
       item.srcName,
@@ -28,9 +31,11 @@ export function buildManifest(items, settings) {
       r.width,
       r.height,
       (item.beforeBytes / 1024).toFixed(1),
-      (r.afterBytes / 1024).toFixed(1),
+      (item.afterBytes / 1024).toFixed(1),
       item.beforeBytes ? `${(((r.afterBytes - item.beforeBytes) / item.beforeBytes) * 100).toFixed(1)}%` : '',
       r.hitTarget ? '达标' : '未达目标',
+      sliceOf,
+      item.note || '',
     ])
   }
   return toCSV(rows)
@@ -45,17 +50,36 @@ export async function buildZip(items, settings, meta = {}) {
   const root = zip.folder('tiehao-output')
   const usedByDir = new Map()
 
+  // 一个目标可能产出多张（详情页切片），manifest 每张一行
+  const flat = []
   for (const item of items) {
     const dirName = safeDir(item.platform || '')
     const dir = dirName ? root.folder(dirName) : root
     if (!usedByDir.has(dirName)) usedByDir.set(dirName, new Set())
     const used = usedByDir.get(dirName)
-    const outName = dedupeName(item.result.name, used)
-    item.outName = dirName ? `${dirName}/${outName}` : outName
-    dir.file(outName, item.result.blob)
+
+    const parts = item.result.slices && item.result.slices.length
+      ? item.result.slices
+      : [{
+        name: item.result.name,
+        blob: item.result.blob,
+        width: item.result.width,
+        height: item.result.height,
+      }]
+
+    for (const [i, part] of parts.entries()) {
+      const outName = dedupeName(part.name, used)
+      dir.file(outName, part.blob)
+      flat.push({
+        ...item,
+        outName: dirName ? `${dirName}/${outName}` : outName,
+        result: { ...item.result, width: part.width, height: part.height },
+        slice: parts.length > 1 ? { index: i, total: parts.length } : null,
+      })
+    }
   }
 
-  root.file('manifest.csv', buildManifest(items, settings))
+  root.file('manifest.csv', buildManifest(flat, settings))
   root.file('README.txt', readmeText(settings, meta))
   return zip.generateAsync({ type: 'blob', compression: 'STORE', streamFiles: true })
 }

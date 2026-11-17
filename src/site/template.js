@@ -35,7 +35,7 @@ export function renderTemplate() {
       <div class="hero-copy">
         <p class="eyebrow">一次上传，全平台铺开</p>
         <h1>一张原图，<br /><em>导出全平台要的所有尺寸。</em></h1>
-        <p class="lede">勾选小红书、抖音、淘宝、Instagram……一次处理好文案、Logo、水印与体积，直接拿到 <b>24 个平台</b>的成品。图片只在你的浏览器里处理，不上传、不注册。</p>
+        <p class="lede">勾选小红书、抖音、淘宝、Instagram……一次处理好文案、Logo、水印与体积，直接拿到 <b>31 个平台</b>的成品。图片只在你的浏览器里处理，不上传、不注册。</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#tool">免费试用<span data-max-files>3</span>张</a>
           <button class="btn btn-ghost" type="button" data-buy>离线批量版 ¥<span data-price>29</span></button>
@@ -72,7 +72,7 @@ export function renderTemplate() {
     <div class="wrap stats-grid">
       <div class="stat"><b><span data-count="100" data-suffix="%">0%</span></b><span>图片在本地处理</span></div>
       <div class="stat"><b><span data-count="0">0</span></b><span>数据上传到服务器</span></div>
-      <div class="stat"><b><span data-count="24">0</span> 个</b><span>平台 / 交付规格</span></div>
+      <div class="stat"><b><span data-count="31">0</span> 个</b><span>平台 / 交付规格</span></div>
       <div class="stat"><b>¥<span data-count="29">0</span></b><span>一次买断 · 不订阅</span></div>
     </div>
   </section>
@@ -88,7 +88,7 @@ export function renderTemplate() {
         <article class="feature-card reveal" style="--d:.02s">
           <div class="feature-icon"><span data-icon="grid"></span></div>
           <h3>一图多版，一次导出</h3>
-          <p>勾选多个平台目标，同一张原图按 24 种规格分别输出。不用再为每个平台手动改一遍尺寸——这是最费时间的那一步。</p>
+          <p>勾选多个平台目标，同一张原图按 31 种规格分别输出。不用再为每个平台手动改一遍尺寸——这是最费时间的那一步。</p>
         </article>
         <article class="feature-card reveal pine" style="--d:.06s">
           <div class="feature-icon pine"><span data-icon="type"></span></div>
@@ -104,6 +104,11 @@ export function renderTemplate() {
           <div class="feature-icon"><span data-icon="layers"></span></div>
           <h3>品牌标识与白边裁剪</h3>
           <p>上传一次 Logo，批量贴到每张图的指定角落；商品图的白底留白自动裁掉，构图立刻紧凑。</p>
+        </article>
+        <article class="feature-card reveal" style="--d:.16s">
+          <div class="feature-icon gold"><span data-icon="box"></span></div>
+          <h3>电商上架合规</h3>
+          <p>淘宝第 5 张白底图必须纯白无字、京东主图 ≤1MB、详情页宽 750 且单张 ≤1500 高。选上目标就按规范出图，长图自动切片，不会把一行字切成两半。</p>
         </article>
         <article class="feature-card reveal pine" style="--d:.18s">
           <div class="feature-icon pine"><span data-icon="gauge"></span></div>
@@ -184,13 +189,15 @@ export function renderTemplate() {
           <details class="set-group" open>
             <summary><span class="set-num">1</span>目标平台 · 一图多版<span class="set-chevron"><span data-icon="chevron"></span></span></summary>
             <div class="set-body">
-              <p class="hint">勾选要投放的平台，一次导出多套规格。取消全选则使用下方自定义画布。</p>
+              <p class="hint">先套一个「上架包」一次勾好整套，也可以单独挑平台。白底图与详情页切片会自动按平台规则处理。</p>
               <div class="target-toolbar">
                 <input type="search" id="targetSearch" placeholder="搜索平台 / 规格" aria-label="搜索平台" />
                 <button class="btn btn-ghost btn-sm" id="targetClear" type="button">清空</button>
               </div>
+              <div class="pack-list" id="packList" role="group" aria-label="上架包"></div>
               <div class="target-list" id="targetList" role="group" aria-label="目标平台"></div>
               <div class="target-summary" id="targetSummary">未选择目标</div>
+              <p class="compliance-note" id="complianceNote" hidden></p>
               <label class="field">文件名模板
                 <input type="text" id="nameTemplate" value="{name}-{platform}-{w}x{h}" maxlength="60" />
                 <span class="hint">可用：{name} {platform} {w} {h} {index} {ext}</span>
@@ -551,7 +558,7 @@ export function renderTemplate() {
           <p class="price">¥0</p>
           <ul>
             <li>每批 <span data-max-files>3</span> 张</li>
-            <li>3 个常用平台（小红书 / 抖音 / 淘宝）</li>
+            <li>4 个常用平台（小红书 / 抖音 / 淘宝主图 + 白底图）</li>
             <li>裁切 / 水印 / 目标体积压缩</li>
             <li>ZIP + CSV 清单</li>
             <li>无需注册，打开就用</li>
@@ -564,7 +571,7 @@ export function renderTemplate() {
           <h3>离线批量版</h3>
           <p class="price">¥<span data-price>29</span> <small>永久使用</small></p>
           <ul>
-            <li><b>一图多版</b>：24 个平台 / 交付规格，一次导出</li>
+            <li><b>一图多版</b>：31 个平台 / 交付规格，一次导出</li>
             <li><b>文案排版</b>：6 种版式，标题 / 卖点 / 价签直接进图</li>
             <li><b>品牌 Logo</b>：上传一次，批量贴到指定角落</li>
             <li><b>白边裁剪 + 焦点裁切</b></li>
@@ -580,7 +587,7 @@ export function renderTemplate() {
         <thead><tr><th>对比项</th><th>在线体验</th><th>离线批量版</th></tr></thead>
         <tbody>
           <tr><td>每批张数</td><td>3 张</td><td class="yes">30 张</td></tr>
-          <tr><td>目标平台规格</td><td>3 个</td><td class="yes">24 个（含打印 / 网页交付）</td></tr>
+          <tr><td>目标平台规格</td><td>4 个</td><td class="yes">31 个（含电商与打印 / 网页交付）</td></tr>
           <tr><td>一次导出多套尺寸</td><td class="no">—</td><td class="yes">支持，最多 12 个目标 / 张</td></tr>
           <tr><td>文案排版（标题 / 卖点 / 价签）</td><td class="no">—</td><td class="yes">6 种版式</td></tr>
           <tr><td>品牌 Logo</td><td class="no">—</td><td class="yes">文字 / 上传图片</td></tr>
@@ -615,7 +622,7 @@ export function renderTemplate() {
       <div class="faq-list">
         <details class="reveal" open>
           <summary>在线版和离线版到底差在哪？</summary>
-          <p>在线版能完整跑通裁切、水印、目标体积压缩和 ZIP 导出，只是每批 3 张、只有 3 个常用平台。<b>离线版的核心不是「解锁」，而是「一图多版」</b>：一张原图一次导出 24 种平台规格，再加上文案排版、品牌 Logo、白边裁剪和焦点裁切。这些能力解决的是同一件事——别再为每个平台手工改一遍尺寸。</p>
+          <p>在线版能完整跑通裁切、水印、目标体积压缩和 ZIP 导出，只是每批 3 张、只有 4 个常用平台。<b>离线版的核心不是「解锁」，而是「一图多版」</b>：一张原图一次导出 31 种平台规格，再加上文案排版、品牌 Logo、白边裁剪和焦点裁切。这些能力解决的是同一件事——别再为每个平台手工改一遍尺寸。</p>
         </details>
         <details class="reveal">
           <summary>图片会上传吗？</summary>
@@ -697,7 +704,7 @@ export function renderTemplate() {
     <h3 id="buyTitle">获取离线批量版</h3>
     <p class="price">¥<span data-price>29</span> <small>一次买断 · 不订阅</small></p>
     <ul class="buy-points">
-      <li>一图多版：24 个平台规格，一次导出</li>
+      <li>一图多版：31 个平台规格，一次导出</li>
       <li>文案排版 · 品牌 Logo · 白边裁剪 · 焦点裁切</li>
       <li>每批 <span data-max-files-offline>30</span> 张，单个 HTML 文件断网可用</li>
     </ul>

@@ -208,6 +208,73 @@ describe('页面运行时冒烟', () => {
   })
 })
 
+describe('电商合规：白底图与详情切片', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    document.body.innerHTML = ''
+  })
+
+  it('目标列表显示白底/切片/体积标签', () => {
+    runPage()
+    const white = document.querySelector('[data-target="taobao-white"]')
+    expect(white).toBeTruthy()
+    expect(white.textContent).toContain('纯白底')
+    const detail = document.querySelector('[data-target="taobao-detail"]')
+    expect(detail.textContent).toContain('切 1500px')
+    expect(detail.textContent).toContain('500KB')
+  })
+
+  it('选中白底图后给出「会忽略文字层」的提示', async () => {
+    runPage()
+    const note = () => document.querySelector('#complianceNote')
+    expect(note().hidden).toBe(true)
+
+    // 水印默认是开着的，这里确认文字非空即可
+    const wmText = document.querySelector('#wmText')
+    expect(document.querySelector('#wmEnable').checked).toBe(true)
+    wmText.value = 'DEMO'
+    input(wmText)
+
+    document.querySelector('[data-target="taobao-white"]').click()
+    await vi.waitFor(() => expect(note().hidden).toBe(false), { timeout: 4000 })
+    expect(note().textContent).toContain('纯白底')
+    expect(note().textContent).toContain('水印')
+  })
+
+  it('上架包一次勾好整套目标（在线版只勾可用的那几个）', async () => {
+    runPage()
+    const pack = () => document.querySelector('[data-pack="taobao-listing"]')
+    expect(pack()).toBeTruthy()
+    // 在线版淘宝上架包里，主图与白底图免费、详情切片需离线版
+    expect(pack().textContent).toContain('需离线版')
+    pack().click()
+    await vi.waitFor(() => {
+      expect((saved() || {}).targets).toEqual(['taobao-main', 'taobao-white'])
+    })
+    // 再点一次取消
+    pack().click()
+    await vi.waitFor(() => expect((saved() || {}).targets).toEqual([]))
+  })
+
+  it('整包都锁着时点一下直接引导到购买说明', async () => {
+    runPage()
+    document.querySelector('[data-pack="xianyu-listing"]').click()
+    await vi.waitFor(() => {
+      expect(document.querySelector('#buyModal').hidden).toBe(false)
+    })
+    expect((saved() || {}).targets).toBeUndefined()
+  })
+
+  it('只选普通主图时不出现合规提示', async () => {
+    runPage()
+    document.querySelector('[data-target="taobao-main"]').click()
+    await vi.waitFor(() => {
+      expect(document.querySelector('#targetSummary').textContent).toContain('淘宝')
+    })
+    expect(document.querySelector('#complianceNote').hidden).toBe(true)
+  })
+})
+
 describe('离线版不再推销自己', () => {
   it('离线产物隐藏价格区、购买按钮与价格导航', async () => {
     localStorage.clear()

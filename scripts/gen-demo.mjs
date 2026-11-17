@@ -189,3 +189,56 @@ const after = await processFile(padFile, normalizeSettings({
 fs.writeFileSync(path.join(OUT, 'trim-before.jpg'), Buffer.from(await before.blob.arrayBuffer()))
 fs.writeFileSync(path.join(OUT, 'trim-after.jpg'), Buffer.from(await after.blob.arrayBuffer()))
 console.log(`✓ docs/trim-before.jpg  ${before.width}×${before.height}  →  docs/trim-after.jpg  ${after.width}×${after.height}`)
+
+// —— 电商上架包：主图 + 白底图 + 详情页切片，验证真实卖家的完整流程
+const listingSettings = normalizeSettings({
+  targets: ['taobao-main', 'taobao-white', 'taobao-detail'],
+  fit: 'contain',
+  bg: '#f3ece1',
+  format: 'image/jpeg',
+  quality: 0.88,
+  nameTemplate: '{name}-{platform}-{w}x{h}',
+  wm: { enabled: true, text: '@tiehao.shop', pos: 'br', size: 3.4, opacity: 0.8, color: '#ffffff' },
+})
+
+// 详情页长图：750 宽、很高，里面的深色横条模拟文字行
+const detailCanvas = createCanvas(750, 3600)
+const dctx = detailCanvas.getContext('2d')
+const dg = dctx.createLinearGradient(0, 0, 0, 3600)
+dg.addColorStop(0, '#fbf7f0')
+dg.addColorStop(1, '#efe3d2')
+dctx.fillStyle = dg
+dctx.fillRect(0, 0, 750, 3600)
+dctx.fillStyle = '#c9a227'
+dctx.fillRect(0, 0, 750, 220)
+for (let y = 320; y < 3300; y += 420) {
+  dctx.fillStyle = '#3b3630'
+  dctx.fillRect(70, y, 430, 30)
+  dctx.fillStyle = '#8d857a'
+  dctx.fillRect(70, y + 56, 560, 20)
+  dctx.fillRect(70, y + 92, 500, 20)
+  dctx.fillStyle = 'rgba(201,162,39,.25)'
+  dctx.fillRect(70, y + 150, 610, 180)
+}
+const detailFile = new File([new Uint8Array(detailCanvas.toBuffer('image/jpeg', 90))], 'detail-page.jpg', { type: 'image/jpeg' })
+
+const listingFile = new File([multiSource], 'product-shot.jpg', { type: 'image/jpeg' })
+const listingTargets = listingSettings.targets.map(findPreset).filter(Boolean)
+const listingOut = await processFileToTargets(listingFile, listingSettings, listingTargets, { index: 1 })
+for (const { preset, result } of listingOut) {
+  const total = result.slices ? result.slices.reduce((a, sl) => a + sl.blob.size, 0) : result.blob.size
+  console.log(`✓ ${preset.platform} ${preset.name}  ${result.width}×${result.height}  ${(total / 1024).toFixed(0)}KB${result.slices ? `  （切片 ${result.slices.length} 张）` : ''}`)
+}
+
+// 详情页切片单独跑一遍，输出首片做展示
+const detailOut = await processFile(detailFile, listingSettings, { preset: findPreset('taobao-detail') })
+for (const sl of detailOut.slices) {
+  fs.writeFileSync(path.join(OUT, `detail-slice-${sl.index + 1}.jpg`), Buffer.from(await sl.blob.arrayBuffer()))
+  console.log(`✓ docs/detail-slice-${sl.index + 1}.jpg  ${sl.width}×${sl.height}  ${(sl.blob.size / 1024).toFixed(0)}KB`)
+}
+// 白底图
+const whiteOut = listingOut.find((o) => o.preset.id === 'taobao-white')
+if (whiteOut) {
+  fs.writeFileSync(path.join(OUT, 'taobao-white.jpg'), Buffer.from(await whiteOut.result.blob.arrayBuffer()))
+  console.log(`✓ docs/taobao-white.jpg  ${whiteOut.result.width}×${whiteOut.result.height}`)
+}

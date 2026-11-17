@@ -758,3 +758,36 @@ input[type="color"]:disabled { opacity: 0.5; cursor: not-allowed; }
   .steps-4 { grid-template-columns: 1fr; }
   .steps-4 .step-arrow { display: none; }
 }
+
+/* 目标卡片的合规标签 */
+.t-tag {
+  display: inline-block; margin-left: 0.3rem; padding: 0.05rem 0.34rem;
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.62rem; line-height: 1.5; color: var(--ink-2); white-space: nowrap;
+}
+.t-tag.is-white { border-color: #cbb27a; color: #8a6d24; }
+.t-tag.is-slice { border-color: #7fa8c9; color: #33628c; }
+
+/* 白底图合规提示 */
+.compliance-note {
+  margin: 0.5rem 0 0; padding: 0.5rem 0.65rem;
+  border-left: 3px solid #c8963e; background: rgba(200, 150, 62, 0.09);
+  border-radius: 0 4px 4px 0; font-size: 0.78rem; line-height: 1.6; color: var(--ink-2);
+}
+
+/* 上架包 */
+.pack-list {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.6rem;
+}
+.pack-btn {
+  flex: 0 1 auto; text-align: left; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius-sm, 8px);
+  background: var(--card); padding: 0.35rem 0.6rem;
+  display: grid; gap: 0.05rem; transition: border-color .18s, background .18s;
+}
+.pack-btn:hover { border-color: var(--ink-3); }
+.pack-btn.is-on { border-color: var(--brand); background: rgba(200, 64, 42, 0.06); }
+.pack-btn.is-partial { border-style: dashed; }
+.pack-btn.is-limited .pk-meta { color: #8a6d24; }
+.pk-label { font-size: 0.82rem; font-weight: 600; }
+.pk-meta { font-size: 0.68rem; color: var(--ink-3); }

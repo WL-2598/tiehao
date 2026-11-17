@@ -5,7 +5,7 @@
 export const config = {
   productName: '帖好',
   productNameEn: 'TieHao',
-  version: '1.1.0',
+  version: '1.2.0',
   priceCny: 29,
   currency: 'CNY',
   /** 收款页链接（如 Stripe Payment Link）。留空则显示“配置中”。 */
@@ -20,7 +20,7 @@ export const config = {
   maxTargets: 3,
   maxTargetsOffline: 12,
   /** 在线版允许勾选的目标平台；离线版解锁全部 */
-  webFreeTargets: ['xiaohongshu', 'douyin', 'taobao-main'],
+  webFreeTargets: ['xiaohongshu', 'douyin', 'taobao-main', 'taobao-white'],
   /** 在线版不允许使用的「专业能力」，离线版解锁 */
   webLockedFeatures: ['copy', 'logo', 'trim', 'focus'],
 }

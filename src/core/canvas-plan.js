@@ -82,20 +82,38 @@ export function watermarkPlacements({ text, textWidth, wm, W, H }) {
 }
 
 /**
- * 水印落点 + 避让安全区：留白画布上下有底色边时，水印压在白边上几乎看不见，
- * 所以贴边水印会往画面里挪到「图片实际绘制区域」与「安全区」的交集里。
- * 传入的 box 为图片绘制矩形（canvas-plan 的 fitPlacement 结果）。
+ * 水印落点避让：留白画布上下有底色边时，贴边水印会压在白边上几乎看不见，
+ * 所以把水印收进「图片实际绘制区域」。
+ *
+ * safe 传的是安全区矩形（safeRect 的结果：x/y/w/h，像素），
+ * 只有绘制区域明显大于安全区时才会被安全区进一步收窄——
+ * 否则水印会被挤到画面正中。
  */
 export function safeWatermarkPlacements({ text, textWidth, wm, W, H, box, safe }) {
   const base = watermarkPlacements({ text, textWidth, wm, W, H })
   if (!box) return base
-  const rect = safe || { top: 0, bottom: 0, left: 0, right: 0 }
-  const inset = {
-    top: Math.max(box.y, Math.round(rect.top * H)),
-    left: Math.max(box.x, Math.round(rect.left * W)),
-    right: Math.min(box.x + box.w, W - Math.round(rect.right * W)),
-    bottom: Math.min(box.y + box.h, H - Math.round(rect.bottom * H)),
+
+  let inset = {
+    top: Math.max(0, box.y),
+    left: Math.max(0, box.x),
+    right: Math.min(W, box.x + box.w),
+    bottom: Math.min(H, box.y + box.h),
   }
+
+  if (safe && safe.w > 0 && safe.h > 0) {
+    const boxArea = (box.w * box.h) / (W * H)
+    const safeArea = (safe.w * safe.h) / (W * H)
+    // 只在绘制区域远大于安全区（比如铺满整张画布）时才收进安全区
+    if (boxArea > safeArea * 1.35) {
+      inset = {
+        top: Math.max(inset.top, safe.y),
+        left: Math.max(inset.left, safe.x),
+        right: Math.min(inset.right, safe.x + safe.w),
+        bottom: Math.min(inset.bottom, safe.y + safe.h),
+      }
+    }
+  }
+
   if (inset.bottom - inset.top < H * 0.1 || inset.right - inset.left < W * 0.1) return base
   return base.map((p) => {
     let { x, y } = p

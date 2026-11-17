@@ -8,7 +8,10 @@ import {
 } from '../core/settings.js'
 import { createPresetStore } from '../core/store.js'
 import { processFile, processFileToTargets, composePreview, canvasToURL, decodeImage, decodeLogoImage } from '../core/pipeline.js'
-import { PLATFORM_PRESETS, PLATFORM_GROUPS, normalizeTargets, targetSummary, platformGlyph, findPreset, safeRect, unionSafeArea } from '../core/platforms.js'
+import {
+  PLATFORM_PRESETS, PLATFORM_GROUPS, normalizeTargets, targetSummary, platformGlyph, findPreset,
+  safeRect, unionSafeArea, targetConstraints, TARGET_PACKS, findPack, packSelected,
+} from '../core/platforms.js'
 import { LAYOUTS, TONES, DEFAULT_COPY, parsePoints } from '../core/typography.js'
 import { buildZip, buildManifest } from '../core/zip.js'
 import { makeSampleFiles, makeSampleSource } from '../core/samples.js'
@@ -948,29 +951,98 @@ function renderTargetList() {
       shown += 1
       const on = active.has(p.id)
       const locked = !locks.targetAllowed(p.id)
+      const c = targetConstraints(p)
+      const badges = [
+        c.whiteBg ? '<span class="t-tag is-white">纯白底</span>' : '',
+        c.slice ? `<span class="t-tag is-slice">切 ${c.slice.maxHeight}px</span>` : '',
+        c.maxKB ? `<span class="t-tag">≤${c.maxKB >= 1024 ? `${(c.maxKB / 1024).toFixed(0)}MB` : `${c.maxKB}KB`}</span>` : '',
+      ].join('')
       html.push(`
         <button class="target-item${locked ? ' is-locked' : ''}" type="button" role="checkbox" aria-checked="${on}" aria-pressed="${on}" data-target="${p.id}" data-locked="${locked}" title="${F.escapeHTML(locked ? '离线批量版解锁' : (p.note || ''))}">
           <span class="t-glyph">${glyphSvg(p.id)}</span>
           <span class="t-check">${on ? checkSvg : (locked ? lockSvg() : '')}</span>
           <span class="t-name">${F.escapeHTML(p.name)}</span>
           <span class="t-size">${locked ? '离线版' : `${p.w}×${p.h}`}</span>
+          ${badges}
         </button>
       `)
     }
   }
 
   list.innerHTML = shown ? html.join('') : '<p class="target-empty">没有匹配的平台，换个关键词试试</p>'
+  renderPacks()
   list.querySelectorAll('[data-target]').forEach((btn) => {
     btn.addEventListener('click', () => toggleTarget(btn.dataset.target))
   })
 
   const targets = currentTargets()
   const lockNote = lockedCount && !locks.offline ? ` · 另有 ${lockedCount} 个平台需离线版` : ''
+  const sliceCount = targets.filter((t) => t.slice).length
+  const whiteCount = targets.filter((t) => t.whiteBg).length
+  const effect = [
+    sliceCount ? `${sliceCount} 个详情页目标会自动竖向切片（一张图可能出多张）` : '',
+    whiteCount ? `${whiteCount} 个白底图强制纯白、不加文字` : '',
+  ].filter(Boolean).join('；')
   $('#targetSummary').textContent = targets.length
-    ? `${targetSummary(targets)} · 每张图将输出 ${targets.length} 份${lockNote}`
+    ? `${targetSummary(targets)} · 每张图将输出 ${targets.length} 份${effect ? `（${effect}）` : ''}${lockNote}`
     : `未选择目标（使用自定义画布单张输出）${lockNote}`
   $('#targetSummary').classList.toggle('is-empty', targets.length === 0)
   updateSafeHint()
+  updateComplianceNote(targets)
+}
+
+/** 上架包：一次勾好「上架一套图」需要的全部目标。 */
+function renderPacks() {
+  const wrap = $('#packList')
+  if (!wrap) return
+  const active = state.settings.targets
+  wrap.innerHTML = TARGET_PACKS.map((pack) => {
+    const usable = pack.targets.filter((t) => locks.targetAllowed(t))
+    // 「已套用」只看当前版本可用的目标，否则在线版永远取消不掉
+    const on = usable.length > 0 && packSelected({ targets: usable }, active)
+    const partial = !on && pack.targets.some((t) => active.includes(t))
+    const lockedBits = pack.targets.length - usable.length
+    const cls = ['pack-btn', on ? 'is-on' : '', partial ? 'is-partial' : '', lockedBits ? 'is-limited' : '']
+      .filter(Boolean).join(' ')
+    return `<button class="${cls}" type="button" data-pack="${pack.id}" title="${F.escapeHTML(pack.hint)}">
+      <span class="pk-label">${F.escapeHTML(pack.label)}</span>
+      <span class="pk-meta">${pack.targets.length} 个目标${lockedBits ? ` · ${lockedBits} 个需离线版` : ''}</span>
+    </button>`
+  }).join('')
+  wrap.querySelectorAll('[data-pack]').forEach((btn) => {
+    btn.addEventListener('click', () => applyPack(btn.dataset.pack))
+  })
+}
+
+function applyPack(id) {
+  const pack = findPack(id)
+  if (!pack) return
+  const usable = pack.targets.filter((t) => locks.targetAllowed(t))
+  if (!usable.length) {
+    locks.requireTarget(pack.targets[0], pack.label)
+    return
+  }
+  const active = state.settings.targets
+  const on = usable.length > 0 && packSelected({ targets: usable }, active)
+  const set = new Set(active)
+  if (on) {
+    pack.targets.forEach((t) => set.delete(t))
+  } else {
+    usable.forEach((t) => set.add(t))
+    // 一个上架包就可能超过在线版目标数上限，这里直接说明而不是静默截断
+    const max = locks.maxTargets()
+    if (set.size > max) {
+      toast(`「${pack.label}」共 ${usable.length} 个目标，超过${EDITION === 'offline' ? '当前' : '在线版'}上限 ${max} 个，先去取消几个别的目标`, 'alert', 4200)
+      return
+    }
+  }
+  state.settings.targets = [...set]
+  saveSettings()
+  renderTargetList()
+  invalidatePreview()
+  updatePreview()
+  updateActions()
+  if (!on) toast(`已套用「${pack.label}」`, 'check', 2400)
 }
 
 function toggleTarget(id) {
@@ -993,6 +1065,31 @@ function toggleTarget(id) {
   invalidatePreview()
   updatePreview()
   updateActions()
+}
+
+/**
+ * 白底图目标（淘宝第 5 张 / 京东首图）的平台硬规则：
+ * 纯白底、无文字、无水印、无 Logo。用户当前开了这些效果时要明说会被忽略，
+ * 否则他会以为工具坏了。
+ */
+function updateComplianceNote(targets) {
+  const note = $('#complianceNote')
+  if (!note) return
+  const whiteTargets = targets.filter((t) => t.whiteBg)
+  if (!whiteTargets.length) {
+    note.hidden = true
+    return
+  }
+  const s = state.settings
+  const ignored = []
+  if (s.wm && s.wm.enabled && s.wm.text) ignored.push('水印')
+  if (s.copy && s.copy.enabled) ignored.push('文案')
+  if (s.logo && s.logo.enabled) ignored.push('Logo')
+  const names = whiteTargets.map((t) => `${t.platform} ${t.name}`).join('、')
+  note.hidden = false
+  note.textContent = ignored.length
+    ? `${names}：平台要求纯白底、无文字，这一份会忽略你设置的${ignored.join('、')}。`
+    : `${names}：会强制纯白底并禁用文字层，符合平台白底图规范。`
 }
 
 function updateSafeHint() {

@@ -79,15 +79,28 @@ export const PLATFORM_PRESETS = [
     name: '主图 1:1',
     w: 1200, h: 1200,
     safe: { top: 0.04, bottom: 0.04, left: 0.04, right: 0.04 },
-    note: '白底主图占首图位；详情页首屏多按方图展示',
+    maxKB: 500,
+    note: '主图 800×800 起、推荐 1000–1200；单张建议 ≤500KB',
+  },
+  {
+    id: 'taobao-white',
+    platform: '淘宝 / 天猫',
+    name: '白底图 1:1',
+    w: 1200, h: 1200,
+    safe: { top: 0.02, bottom: 0.02, left: 0.02, right: 0.02 },
+    maxKB: 500,
+    whiteBg: true,
+    note: '第 5 张白底图：纯白底、无文字无 Logo、主体占 60% 以上',
   },
   {
     id: 'taobao-detail',
     platform: '淘宝 / 天猫',
-    name: '详情长图 3:4',
-    w: 1200, h: 1600,
-    safe: { top: 0.03, bottom: 0.03, left: 0.03, right: 0.03 },
-    note: '上下留白少，适合连贯排布',
+    name: '详情页切片 750',
+    w: 750, h: 1500,
+    safe: { top: 0.02, bottom: 0.02, left: 0.02, right: 0.02 },
+    maxKB: 500,
+    slice: { width: 750, maxHeight: 1500 },
+    note: '详情页宽 750、单张高 ≤1500；超长图会自动竖向切片',
   },
   {
     id: 'jd-main',
@@ -95,7 +108,28 @@ export const PLATFORM_PRESETS = [
     name: '主图 1:1',
     w: 1200, h: 1200,
     safe: { top: 0.04, bottom: 0.04, left: 0.04, right: 0.04 },
-    note: '白底为主',
+    maxKB: 1024,
+    note: '首图纯白底、主体居中；单张 ≤1MB',
+  },
+  {
+    id: 'jd-white',
+    platform: '京东',
+    name: '白底图 1:1',
+    w: 1200, h: 1200,
+    safe: { top: 0.02, bottom: 0.02, left: 0.02, right: 0.02 },
+    maxKB: 1024,
+    whiteBg: true,
+    note: '首图要求纯白底 RGB(255,255,255)、四边留白约 30px',
+  },
+  {
+    id: 'jd-detail',
+    platform: '京东',
+    name: '详情页切片 750',
+    w: 750, h: 1500,
+    safe: { top: 0.02, bottom: 0.02, left: 0.02, right: 0.02 },
+    maxKB: 500,
+    slice: { width: 750, maxHeight: 1500 },
+    note: '移动端详情宽 750；单张 ≤500KB，建议单张高 ≤1500',
   },
   {
     id: 'pdd-main',
@@ -103,7 +137,26 @@ export const PLATFORM_PRESETS = [
     name: '主图 1:1',
     w: 1200, h: 1200,
     safe: { top: 0.05, bottom: 0.05, left: 0.05, right: 0.05 },
-    note: '角标与促销标签会压到四角',
+    maxKB: 1024,
+    note: '首图纯白底；角标与促销标签会压到四角',
+  },
+  {
+    id: 'xianyu-main',
+    platform: '闲鱼',
+    name: '主图 1:1',
+    w: 1200, h: 1200,
+    safe: { top: 0.05, bottom: 0.05, left: 0.05, right: 0.05 },
+    maxKB: 2048,
+    note: '二手主图建议 800×800 以上方图；最多 9 张，单张 ≤20MB',
+  },
+  {
+    id: 'xianyu-34',
+    platform: '闲鱼',
+    name: '竖版 3:4',
+    w: 1200, h: 1600,
+    safe: { top: 0.05, bottom: 0.08, left: 0.05, right: 0.05 },
+    maxKB: 2048,
+    note: '闲鱼推荐页里 3:4 观感更好，主图可压一行卖点字',
   },
   {
     id: 'weibo',
@@ -252,6 +305,29 @@ export function unionSafeArea(presets) {
   }
 }
 
+/**
+ * 目标规格带来的隐含约束：白底图不能有文案/水印/Logo，
+ * 有体积上限的目标要据此收敛压缩目标。
+ * 返回 { maxKB, whiteBg, noText, slice }
+ */
+export function targetConstraints(preset) {
+  if (!preset) return { maxKB: 0, whiteBg: false, noText: false, slice: null }
+  return {
+    maxKB: Number(preset.maxKB) || 0,
+    whiteBg: Boolean(preset.whiteBg),
+    noText: Boolean(preset.whiteBg),   // 白底图的硬规则：不许任何文字/水印/Logo
+    slice: preset.slice || null,
+  }
+}
+
+/** 目标要求「无文字」时，哪些设置项会被强制关掉（用于 UI 提示）。 */
+export const NO_TEXT_FEATURES = ['copy', 'wm', 'logo']
+
+/** 需要按平台切片的目标判断。 */
+export function wantsSlice(preset) {
+  return Boolean(preset?.slice)
+}
+
 /** 安全区矩形（像素），供预览叠加与提示使用。 */
 export function safeRect(preset) {
   const s = preset?.safe || { top: 0.05, bottom: 0.05, left: 0.05, right: 0.05 }
@@ -274,7 +350,12 @@ export function platformGlyph(id) {
     'wechat-cover': '<path d="M4 6h16v12H4Z"/><circle cx="9" cy="11" r="2"/><path d="m5 17 4.5-4 3 3 2.5-2 3.5 3"/>',
     'wechat-square': '<path d="M4 6h16v12H4Z"/><circle cx="9" cy="11" r="2"/><path d="m5 17 4.5-4 3 3 2.5-2 3.5 3"/>',
     'taobao-main': '<path d="M6 9h12l-1 10H7Z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/>',
+    'taobao-white': '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12h6M9 15h4"/>',
     'taobao-detail': '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9.5 8h5M9.5 12h5M9.5 16h3"/>',
+    'jd-white': '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12h6"/>',
+    'jd-detail': '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="M9.5 8h5M9.5 12h5"/>',
+    'xianyu-main': '<path d="M4 9.5 12 5l8 4.5-8 4.5Z"/><path d="M4 14 12 18.5 20 14"/>',
+    'xianyu-34': '<rect x="6" y="3.5" width="12" height="17" rx="2"/><path d="m9 15 3-3 3 3"/><path d="M12 12V7"/>',
     'jd-main': '<path d="M5 9h14l-1.2 10H6.2Z"/><path d="M9 9V7.5a3 3 0 0 1 6 0V9"/>',
     'pdd-main': '<rect x="4" y="7" width="16" height="12" rx="3"/><path d="M8 7V5.5M16 7V5.5"/><path d="M9 13h6"/>',
     weibo: '<circle cx="12" cy="13" r="6"/><path d="M7 7c2-2 6-2.5 9-1"/><path d="M15.5 4.5c2 .5 3.5 2 4 4"/>',
@@ -329,4 +410,44 @@ export function targetSummary(presets) {
 
 export function clampTargetCount(n, max = 8) {
   return clamp(Math.round(n) || 0, 0, max)
+}
+
+/**
+ * 「上架包」：把真实卖家一次上架要准备的那套图打包好，一键勾选。
+ * 淘宝/京东的主图 + 白底图 + 详情页切片就是一次完整的上架素材。
+ */
+export const TARGET_PACKS = [
+  {
+    id: 'taobao-listing',
+    label: '淘宝上架包',
+    hint: '主图 + 白底图 + 详情页切片（符合 750 宽、单张 ≤1500 高的规范）',
+    targets: ['taobao-main', 'taobao-white', 'taobao-detail'],
+  },
+  {
+    id: 'jd-listing',
+    label: '京东上架包',
+    hint: '首图 + 白底图 + 详情页切片（主图 ≤1MB、详情图 ≤500KB）',
+    targets: ['jd-main', 'jd-white', 'jd-detail'],
+  },
+  {
+    id: 'xianyu-listing',
+    label: '闲鱼发布包',
+    hint: '方图主图 + 3:4 竖版，二手商品两种比例都备好',
+    targets: ['xianyu-main', 'xianyu-34'],
+  },
+  {
+    id: 'social-all',
+    label: '社媒全家桶',
+    hint: '小红书、抖音、视频号各一套竖版',
+    targets: ['xiaohongshu', 'douyin', 'shipinhao'],
+  },
+]
+
+export function findPack(id) {
+  return TARGET_PACKS.find((p) => p.id === id) || null
+}
+
+/** 上架包当前是否已全部选中。 */
+export function packSelected(pack, activeIds) {
+  return pack.targets.every((t) => activeIds.includes(t))
 }

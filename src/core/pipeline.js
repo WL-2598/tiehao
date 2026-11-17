@@ -11,7 +11,8 @@ import { normalizeCopy, copyIsActive, drawCopyLayer, toneColors } from './typogr
 import { normalizeLogo, drawLogo, logoReady } from './logo.js'
 import { trimCanvas, focusRect } from './trim.js'
 import { safeWatermarkPlacements } from './canvas-plan.js'
-import { buildOutputName, safeSlug, safeRect } from './platforms.js'
+import { buildOutputName, safeSlug, safeRect, targetConstraints } from './platforms.js'
+import { sliceCanvas } from './slice.js'
 
 const MAX_CANVAS_PIXELS = 64_000_000
 
@@ -136,10 +137,14 @@ export function composeCanvas(source, srcW, srcH, w, h, settings, opts = {}) {
   canvas.width = w
   canvas.height = h
   const ctx = canvas.getContext('2d')
-  const copy = settings.copy && copyIsActive(settings.copy) ? normalizeCopy(settings.copy) : null
+  // 白底图目标（淘宝第 5 张 / 京东首图）有硬规则：纯白底、无文字、无水印、无 Logo
+  const limits = targetConstraints(opts.preset)
+  const whiteBg = limits.whiteBg
+  const bgColor = whiteBg ? '#ffffff' : settings.bg
+  const copy = !whiteBg && settings.copy && copyIsActive(settings.copy) ? normalizeCopy(settings.copy) : null
 
   if (settings.fit === 'contain') {
-    ctx.fillStyle = settings.bg
+    ctx.fillStyle = bgColor
     ctx.fillRect(0, 0, w, h)
   }
 
@@ -178,7 +183,7 @@ export function composeCanvas(source, srcW, srcH, w, h, settings, opts = {}) {
   if (copy) drawCopyLayer(ctx, copy, w, h)
 
   // 文字水印
-  if (settings.wm && settings.wm.enabled) {
+  if (!whiteBg && settings.wm && settings.wm.enabled) {
     drawWatermark(ctx, settings.wm, w, h, {
       box: drawnBox,
       safe: opts.preset ? safeRect(opts.preset) : null,
@@ -186,7 +191,7 @@ export function composeCanvas(source, srcW, srcH, w, h, settings, opts = {}) {
   }
 
   // 品牌标识
-  if (settings.logo && logoReady(settings.logo)) {
+  if (!whiteBg && settings.logo && logoReady(settings.logo)) {
     if (opts.logoImage) ctx.__logoImage = opts.logoImage
     const fam = copy ? WATERMARK_FAMILY : WATERMARK_FAMILY
     drawLogo(ctx, settings.logo, w, h, fam)
@@ -212,7 +217,10 @@ function encode(canvas, mime, quality) {
  */
 export async function encodeToTarget(canvas, settings) {
   const mime = settings.format
-  const targetBytes = mime === 'image/png' ? 0 : Math.max(0, Number(settings.targetKB) || 0) * 1024
+  const targetKB = Number(settings.targetKBOverride) >= 0 && settings.targetKBOverride != null
+    ? Number(settings.targetKBOverride)
+    : Number(settings.targetKB) || 0
+  const targetBytes = mime === 'image/png' ? 0 : Math.max(0, targetKB) * 1024
   const plan = compressionPlan({ quality: settings.quality, targetBytes })
   let last = null
   for (const step of plan) {
@@ -252,6 +260,22 @@ export async function decodeLogoImage(logo) {
 }
 
 /**
+ * 详情页目标的画布尺寸：宽度锁死（750），高度按原图比例展开，
+ * 上限由 slice.maxHeight × 8 兜住，避免一张 1:20 的长图把浏览器拖死。
+ * fit 为 cover 时按固定高度（= maxHeight）出图，适合单张详情图。
+ */
+export function detailCanvasSize(slice, srcW, srcH, settings) {
+  const width = slice.width
+  const ratio = srcH / Math.max(1, srcW)
+  const raw = Math.round(width * ratio)
+  const maxTotal = (slice.maxHeight || 1500) * 8
+  const height = settings.fit === 'cover'
+    ? (slice.maxHeight || 1500)
+    : Math.max(Math.round(width * 0.5), Math.min(raw, maxTotal))
+  return { w: width, h: height }
+}
+
+/**
  * 处理单张图片，按「一个目标规格」输出。
  * spec: { preset|null, w, h, fit, format, quality, targetKB }
  * opts: { maxMegapixels, logoImage, index, template, safeGuide }
@@ -276,13 +300,23 @@ export async function processFile(file, settings, opts = {}) {
     const effW = crop ? crop.sw : srcW
     const effH = crop ? crop.sh : srcH
 
-    const { w, h } = preset
-      ? { w: preset.w, h: preset.h }
-      : resolveCanvasSize(spec, effW, effH)
+    // 详情页切片目标：宽度锁死、高度按长宽比展开，再交给 sliceCanvas 切
+    const sliceSpec = preset?.slice || null
+    const { w, h } = sliceSpec
+      ? detailCanvasSize(sliceSpec, effW, effH, spec)
+      : preset
+        ? { w: preset.w, h: preset.h }
+        : resolveCanvasSize(spec, effW, effH)
 
     if (w * h > MAX_CANVAS_PIXELS) {
       throw new Error('输出画布过大，请把自定义尺寸调到 8000px 以内')
     }
+
+    // 目标自带体积上限（京东主图 1MB、详情图 500KB…）优先于全局设置
+    const limits = targetConstraints(preset)
+    const targetKBOverride = limits.maxKB
+      ? Math.min(limits.maxKB, Number(spec.targetKB) > 0 ? Number(spec.targetKB) : limits.maxKB)
+      : null
 
     const canvas = composeCanvas(decoded.source, srcW, srcH, w, h, spec, {
       logoImage: opts.logoImage,
@@ -290,11 +324,62 @@ export async function processFile(file, settings, opts = {}) {
       preset,
       crop,
     })
-    const out = await encodeToTarget(canvas, spec)
-    const ext = extForMime(spec.format)
-    const platformLabel = preset ? preset.platform : ''
     const base = baseName(file.name || 'image')
+    const platformLabel = preset ? preset.platform : ''
     const template = opts.template || spec.nameTemplate
+    const ext = extForMime(spec.format)
+    const encodeSpec = targetKBOverride == null ? spec : { ...spec, targetKBOverride }
+
+    if (sliceSpec) {
+      const pieces = sliceCanvas(canvas, sliceSpec.maxHeight, {
+        avoidCutting: spec.sliceAvoidCutting !== false,
+      })
+      const slices = []
+      let totalBytes = 0
+      let allHit = true
+      for (const piece of pieces) {
+        const out = await encodeToTarget(piece.canvas, encodeSpec)
+        if (!out.hitTarget) allHit = false
+        totalBytes += out.blob.size
+        const idx = (opts.index ?? 1) + piece.index
+        const name = template
+          ? buildOutputName(template, {
+            name: base,
+            platform: platformLabel,
+            w: out.width,
+            h: out.height,
+            index: idx,
+            ext,
+          })
+          : `${base}-${String(piece.index + 1).padStart(2, '0')}.${ext}`
+        slices.push({
+          name,
+          blob: out.blob,
+          width: out.width,
+          height: out.height,
+          index: piece.index,
+          total: piece.total,
+        })
+      }
+      return {
+        name: slices[0]?.name || `${base}.${ext}`,
+        blob: slices[0]?.blob || null,
+        width: slices[0]?.width || w,
+        height: slices[0]?.height || h,
+        quality: spec.quality,
+        scale: 1,
+        hitTarget: allHit,
+        beforeBytes: file.size,
+        afterBytes: totalBytes,
+        canvas,
+        presetId: preset?.id || null,
+        platform: platformLabel,
+        targetName: preset?.name || '',
+        slices,
+      }
+    }
+
+    const out = await encodeToTarget(canvas, encodeSpec)
     const name = template
       ? buildOutputName(template, {
         name: base, platform: platformLabel, w: out.width, h: out.height, index: opts.index ?? 1, ext,
@@ -315,6 +400,7 @@ export async function processFile(file, settings, opts = {}) {
       presetId: preset?.id || null,
       platform: platformLabel,
       targetName: preset?.name || '',
+      slices: null,
     }
   } finally {
     decoded.dispose()

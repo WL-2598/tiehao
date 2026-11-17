@@ -18,7 +18,7 @@ describe('buildManifest', () => {
     expect(lines).toHaveLength(2)
     expect(lines[0].split(',')).toEqual([
       '输出文件', '原文件', '平台', '规格', '画布尺寸', '适配方式', '格式',
-      '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化', '是否达标',
+      '宽度px', '高度px', '原始大小KB', '输出大小KB', '体积变化', '是否达标', '切片', '备注',
     ])
     expect(lines[1]).toContain('a.webp')
     expect(lines[1]).toContain('DSC0001.jpg')
