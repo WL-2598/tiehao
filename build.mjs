@@ -108,31 +108,97 @@ function startServer() {
     '.js': 'text/javascript; charset=utf-8',
     '.css': 'text/css; charset=utf-8',
     '.json': 'application/json; charset=utf-8',
+    '.txt': 'text/plain; charset=utf-8',
     '.svg': 'image/svg+xml',
     '.png': 'image/png',
     '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.webp': 'image/webp',
     '.ico': 'image/x-icon',
+    '.zip': 'application/zip',
   }
+
+  const notFound = (res) =>
+    res
+      .writeHead(404, { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' })
+      .end('404 · 运行 npm run build 生成页面')
+
   const server = http.createServer((req, res) => {
-    const urlPath = decodeURIComponent((req.url || '/').split('?')[0])
-    let file = path.join(ROOT, urlPath === '/' ? 'index.html' : urlPath)
-    if (!file.startsWith(ROOT)) {
-      res.writeHead(403).end('forbidden')
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      res.writeHead(405, { allow: 'GET, HEAD', 'cache-control': 'no-store' }).end('method not allowed')
+      return
+    }
+
+    let urlPath
+    try {
+      urlPath = decodeURIComponent((req.url || '/').split('?')[0])
+    } catch {
+      res.writeHead(400, { 'cache-control': 'no-store' }).end('bad request')
+      return
+    }
+
+    // 目录跳转：/ 与任何目录都回落到 index.html
+    const clean = urlPath.replace(/\/{2,}/g, '/')
+    const rel = clean === '/' ? 'index.html' : clean.replace(/^\/+/, '')
+    const file = path.resolve(ROOT, rel)
+
+    // 防目录穿越：必须仍在仓库根目录内
+    if (file !== ROOT && !file.startsWith(ROOT + path.sep)) {
+      res.writeHead(403, { 'cache-control': 'no-store' }).end('forbidden')
       return
     }
     if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
-      res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' }).end('404')
+      notFound(res)
       return
     }
-    res.writeHead(200, {
-      'content-type': MIME[path.extname(file)] || 'application/octet-stream',
-      'cache-control': DEV ? 'no-store' : 'public, max-age=3600',
-    })
-    fs.createReadStream(file).pipe(res)
+
+    const ext = path.extname(file).toLowerCase()
+    const isHtml = ext === '.html'
+    const stat = fs.statSync(file)
+    const headers = {
+      'content-type': MIME[ext] || 'application/octet-stream',
+      'content-length': stat.size,
+      // 本地预览永远是「最新构建」：HTML 一律不缓存，其它静态资源短缓存
+      'cache-control': isHtml ? 'no-store, must-revalidate' : DEV ? 'no-store' : 'public, max-age=60',
+      'last-modified': stat.mtime.toUTCString(),
+      'x-content-type-options': 'nosniff',
+    }
+
+    // 支持条件请求，刷新预览窗口时不会拿到旧 HTML
+    const inm = req.headers['if-modified-since']
+    if (inm && !isHtml && new Date(inm).getTime() >= Math.floor(stat.mtimeMs / 1000) * 1000) {
+      res.writeHead(304, { 'cache-control': headers['cache-control'] }).end()
+      return
+    }
+
+    res.writeHead(200, headers)
+    if (req.method === 'HEAD') {
+      res.end()
+      return
+    }
+    fs.createReadStream(file).on('error', () => res.end()).pipe(res)
   })
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.error(`\n端口 ${PORT} 已被占用。先停掉旧进程，或换端口：PORT=4174 npm run preview`)
+      process.exit(1)
+    }
+    throw err
+  })
+
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`\n帖好 TieHao 预览：http://localhost:${PORT}/`)
+    console.log(`\n帖好 TieHao 预览已启动：http://localhost:${PORT}/`)
+    console.log(`在线版：/  ·  离线版：/product/TieHao-Offline.html  ·  HTML 不缓存，改完刷新即可`)
   })
+
+  const shutdown = () => {
+    console.log('\n正在关闭预览服务…')
+    server.close(() => process.exit(0))
+    setTimeout(() => process.exit(0), 1500)
+  }
+  process.on('SIGTERM', shutdown)
+  process.on('SIGINT', shutdown)
 }
 
 main().catch((err) => {
