@@ -468,6 +468,9 @@ function updateActions() {
   $('#downloadCsv').disabled = !done.length || state.busy
   const sel = selectedItem()
   $('#downloadCurrent').disabled = !sel?.result || state.busy
+  const failed = state.items.filter((i) => i.status === 'error').length
+  $('#retryFailed').hidden = failed === 0
+  $('#retryFailed').disabled = !failed || state.busy
   $('#processBtn').disabled = !state.items.length || state.busy
 }
 
@@ -489,6 +492,19 @@ async function retryItem(id) {
   renderQueue()
   updateActions()
   toast('已重新加入待处理队列，点「开始处理」重试', 'info', 2200)
+}
+
+async function retryFailed() {
+  if (state.busy) return
+  const failed = state.items.filter((i) => i.status === 'error')
+  if (!failed.length) return
+  for (const item of failed) {
+    item.status = 'ready'
+    item.error = null
+  }
+  renderQueue()
+  toast(`正在重试 ${failed.length} 张`, 'info', 1500)
+  await processAll()
 }
 
 async function processAll() {
@@ -840,6 +856,7 @@ function init() {
   $('#downloadZip').addEventListener('click', downloadZip)
   $('#downloadCsv').addEventListener('click', downloadCsv)
   $('#downloadCurrent').addEventListener('click', downloadCurrent)
+  $('#retryFailed').addEventListener('click', retryFailed)
 
   renderQueue()
   updateDropStats()

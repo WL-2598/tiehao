@@ -351,6 +351,7 @@ export function renderTemplate() {
             <button class="btn btn-primary" id="downloadCurrent" type="button" disabled><span data-icon="download"></span> 下载当前</button>
             <button class="btn btn-pine" id="downloadZip" type="button" disabled><span data-icon="archive"></span> 下载全部 ZIP</button>
             <button class="btn btn-ghost" id="downloadCsv" type="button" disabled><span data-icon="file"></span> 清单 CSV</button>
+            <button class="btn btn-ghost" id="retryFailed" type="button" disabled><span data-icon="refresh"></span> 重试失败</button>
           </div>
           <p class="summary" id="summaryText"></p>
         </section>

@@ -203,3 +203,49 @@ describe('页面运行时冒烟', () => {
     expect(modal.hidden).toBe(true)
   })
 })
+
+describe('失败重试与额度提示', () => {
+  beforeAll(() => {
+    window.createImageBitmap = async () => ({ width: 1600, height: 2000, close() {} })
+    globalThis.createImageBitmap = window.createImageBitmap
+  })
+  beforeEach(() => {
+    localStorage.clear()
+    document.body.innerHTML = ''
+  })
+
+  it('编码失败会标记为失败，重试按钮出现且能重新处理成功', async () => {
+    runPage()
+    document.querySelector('#loadSamples').click()
+    await vi.waitFor(() => expect(document.querySelectorAll('#fileList .file-item').length).toBe(3))
+    expect(document.querySelector('#retryFailed').hidden).toBe(true)
+
+    // 让第一次编码失败（模拟浏览器不支持该格式）
+    const realToBlob = HTMLCanvasElement.prototype.toBlob
+    let failedOnce = false
+    HTMLCanvasElement.prototype.toBlob = function (cb, type, q) {
+      if (!failedOnce) {
+        failedOnce = true
+        setTimeout(() => cb(null), 0)
+        return
+      }
+      return realToBlob.call(this, cb, type, q)
+    }
+
+    document.querySelector('#processBtn').click()
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('#fileList .file-status.error').length).toBe(1)
+    }, { timeout: 15000 })
+    expect(document.querySelector('#retryFailed').hidden).toBe(false)
+    expect(document.querySelector('#statusText').textContent).toContain('失败')
+
+    // 重试：失败项回到待处理，重新跑一遍后应全部完成
+    HTMLCanvasElement.prototype.toBlob = realToBlob
+    document.querySelector('#retryFailed').click()
+    await vi.waitFor(() => {
+      expect(document.querySelectorAll('#fileList .file-status.done').length).toBe(3)
+    }, { timeout: 20000 })
+    expect(document.querySelector('#retryFailed').hidden).toBe(true)
+    expect(document.querySelector('#summaryText').textContent).toContain('已处理 3/3')
+  })
+})

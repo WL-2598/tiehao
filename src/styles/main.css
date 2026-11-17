@@ -30,6 +30,8 @@
 }
 
 * { box-sizing: border-box; }
+/* hidden 属性优先于 .btn 等 display 规则 */
+[hidden] { display: none !important; }
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -399,8 +401,7 @@ input[type="color"]:disabled { opacity: 0.5; cursor: not-allowed; }
 .stage .before-img { z-index: 1; }
 .stage .after-wrap { z-index: 2; }
 .stage[data-mode="before"] .after-wrap,
-.stage[data-mode="before"] .compare-handle,
-.stage[data-mode="before"] .stage-empty { }
+.stage[data-mode="before"] .compare-handle { display: none; }
 .stage[data-mode="after"] .before-img,
 .stage[data-mode="after"] .compare-handle { display: none; }
 .stage[data-mode="compare"] .stage-empty { display: none; }

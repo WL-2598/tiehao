@@ -41,3 +41,22 @@ describe('构建产物', () => {
     expect(web).toContain('id="fileInput"')
   })
 })
+
+describe('样式与结构细节', () => {
+  it('[hidden] 具备全局优先级，避免被 .btn 等 display 规则覆盖', () => {
+    expect(web).toContain('[hidden]{display:none!important}')
+    expect(web).toContain('id="retryFailed"')
+    expect(web).toContain('id="loadSamples"')
+  })
+
+  it('无障碍：主区域、语言、状态播报齐备', () => {
+    expect(web).toContain('lang="zh-CN"')
+    expect(web).toContain('aria-live')
+    expect(web).toContain('role="button"')
+    expect(web).toContain('prefers-reduced-motion')
+  })
+
+  it('隐私承诺：页面不含任何外部资源引用', () => {
+    expect(web.match(/<(script|link|img|source)[^>]+(src|href)="https?:/gi) || []).toEqual([])
+  })
+})
