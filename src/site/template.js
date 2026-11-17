@@ -523,7 +523,7 @@ export function renderTemplate() {
 
 <div class="toast" id="toast" hidden role="status" aria-live="polite"></div>
 
-<script>window.__TIEHAO_CONFIG__ = {{CONFIG}};</script>
+<script>document.documentElement.className += ' js'; window.__TIEHAO_CONFIG__ = {{CONFIG}};</script>
 <script>
 {{APP}}
 </script>
