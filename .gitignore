@@ -1,0 +1,7 @@
+node_modules/
+coverage/
+dist/
+*.log
+.DS_Store
+# 离线包 ZIP 体积小但不适合频繁入库，需要发布时再手动添加
+product/*.zip

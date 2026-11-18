@@ -1,0 +1,28 @@
+{
+  "name": "tiehao",
+  "version": "1.2.0",
+  "private": true,
+  "description": "帖好 TieHao — 一图多版：一张原图导出全平台尺寸，浏览器本地完成排版 / 水印 / 压缩 / 分目录 ZIP",
+  "type": "module",
+  "scripts": {
+    "dev": "node build.mjs --dev",
+    "build": "node build.mjs",
+    "preview": "node build.mjs --serve",
+    "pretest": "node build.mjs && node scripts/check-template.mjs",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "package": "node build.mjs && node scripts/package.mjs",
+    "demo": "node scripts/gen-demo.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "jszip": "^3.10.2"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^1.1.1",
+    "@playwright/test": "^1.65.1",
+    "esbuild": "^0.28.2",
+    "happy-dom": "^21.0.4",
+    "vitest": "^5.1.0"
+  }
+}
